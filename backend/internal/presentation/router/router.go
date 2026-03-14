@@ -15,6 +15,8 @@ func Setup(
 	memoHandler *handler.MemoHandler,
 	tagHandler *handler.TagHandler,
 	pokedexHandler *handler.PokedexHandler,
+	starterHandler *handler.StarterHandler,
+	teamHandler *handler.TeamHandler,
 ) {
 	// CORS
 	r.Use(func(c *gin.Context) {
@@ -82,6 +84,21 @@ func Setup(
 		pokedex := protected.Group("/pokedex")
 		{
 			pokedex.GET("", pokedexHandler.GetPokedex)
+		}
+
+		// Starter Pokemon
+		starter := protected.Group("/starter")
+		{
+			starter.GET("/check", starterHandler.NeedsStarter)
+			starter.POST("/choose", starterHandler.ChooseStarter)
+		}
+
+		// Teams
+		teams := protected.Group("/teams")
+		{
+			teams.POST("", teamHandler.CreateTeam)
+			teams.POST("/:id/join", teamHandler.JoinTeam)
+			teams.GET("/ranking", teamHandler.GetRanking)
 		}
 	}
 }

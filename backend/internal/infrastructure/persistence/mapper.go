@@ -33,6 +33,7 @@ func toUserModel(e *entity.User) *UserModel {
 	return &UserModel{
 		ID:        e.ID,
 		TenantID:  e.TenantID,
+		TeamID:    e.TeamID,
 		GoogleID:  e.GoogleID,
 		Email:     e.Email,
 		Name:      e.Name,
@@ -46,6 +47,7 @@ func toUserEntity(m *UserModel) *entity.User {
 	return &entity.User{
 		ID:        m.ID,
 		TenantID:  m.TenantID,
+		TeamID:    m.TeamID,
 		GoogleID:  m.GoogleID,
 		Email:     m.Email,
 		Name:      m.Name,
@@ -165,5 +167,27 @@ func toUserPokemonEntity(m *UserPokemonModel) *entity.UserPokemon {
 			Types:     types,
 		},
 		CaughtAt: m.CaughtAt,
+	}
+}
+
+// --- Team ---
+
+func mapTeamEntityToModel(e *entity.Team) *TeamModel {
+	return &TeamModel{
+		ID:        e.ID,
+		TenantID:  e.TenantID,
+		Name:      e.Name,
+		CreatedAt: e.CreatedAt,
+		UpdatedAt: e.UpdatedAt,
+	}
+}
+
+func mapTeamModelToEntity(m *TeamModel) *entity.Team {
+	return &entity.Team{
+		ID:        m.ID,
+		TenantID:  m.TenantID,
+		Name:      m.Name,
+		CreatedAt: m.CreatedAt,
+		UpdatedAt: m.UpdatedAt,
 	}
 }

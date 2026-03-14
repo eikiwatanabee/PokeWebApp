@@ -139,6 +139,28 @@ class ApiClient {
   async getPokedex(): Promise<{ pokemon: Pokemon[]; total: number }> {
     return this.request('/api/pokedex')
   }
+
+  // Starter Pokemon
+  async checkNeedsStarter(): Promise<{ needs_starter: boolean }> {
+    return this.request('/api/starter/check')
+  }
+
+  async chooseStarter(pokemonId: number): Promise<{ pokemon_id: number; pokemon_name: string; sprite_url: string }> {
+    return this.request('/api/starter/choose', { method: 'POST', body: JSON.stringify({ pokemon_id: pokemonId }) })
+  }
+
+  // Teams
+  async createTeam(name: string): Promise<{ TeamID: string }> {
+    return this.request('/api/teams', { method: 'POST', body: JSON.stringify({ name }) })
+  }
+
+  async joinTeam(teamId: string): Promise<void> {
+    await this.request(`/api/teams/${teamId}/join`, { method: 'POST' })
+  }
+
+  async getTeamRanking(): Promise<{ teams: { team_id: string; team_name: string; member_count: number; pokemon_count: number; book_count: number }[] }> {
+    return this.request('/api/teams/ranking')
+  }
 }
 
 export const api = new ApiClient()

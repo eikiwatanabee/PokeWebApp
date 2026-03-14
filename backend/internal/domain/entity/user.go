@@ -16,6 +16,7 @@ const (
 type User struct {
 	ID        uuid.UUID
 	TenantID  uuid.UUID
+	TeamID    *uuid.UUID
 	GoogleID  string
 	Email     string
 	Name      string
@@ -50,5 +51,10 @@ func (u *User) IsAdmin() bool {
 
 func (u *User) PromoteToAdmin() {
 	u.Role = RoleAdmin
+	u.UpdatedAt = time.Now()
+}
+
+func (u *User) JoinTeam(teamID uuid.UUID) {
+	u.TeamID = &teamID
 	u.UpdatedAt = time.Now()
 }

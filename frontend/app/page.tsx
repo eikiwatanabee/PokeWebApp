@@ -15,12 +15,16 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!isLoggedIn()) { router.push('/login'); return }
-    Promise.all([
-      api.getBooks(),
-      api.getPokedex(),
-    ]).then(([booksData, pokedexData]) => {
-      setBooks(booksData.books || [])
-      setPokemon(pokedexData.pokemon || [])
+    // Check if user needs to choose a starter Pokemon first
+    api.checkNeedsStarter().then(({ needs_starter }) => {
+      if (needs_starter) { router.push('/starter'); return }
+      return Promise.all([
+        api.getBooks(),
+        api.getPokedex(),
+      ]).then(([booksData, pokedexData]) => {
+        setBooks(booksData.books || [])
+        setPokemon(pokedexData.pokemon || [])
+      })
     }).catch(console.error).finally(() => setLoading(false))
   }, [router])
 

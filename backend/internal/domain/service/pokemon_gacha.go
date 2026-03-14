@@ -26,3 +26,8 @@ func NewPokemonGachaService(fetcher PokemonFetcher) *PokemonGachaService {
 func (s *PokemonGachaService) Draw(ctx context.Context) (*valueobject.PokemonInfo, error) {
 	return s.fetcher.FetchRandom(ctx)
 }
+
+// FetchByID fetches a specific Pokemon by its ID.
+func (s *PokemonGachaService) FetchByID(ctx context.Context, id int) (*valueobject.PokemonInfo, error) {
+	return s.fetcher.FetchByID(ctx, id)
+}

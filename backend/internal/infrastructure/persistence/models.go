@@ -20,15 +20,26 @@ type TenantModel struct {
 func (TenantModel) TableName() string { return "tenants" }
 
 type UserModel struct {
+	ID        uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
+	TenantID  uuid.UUID  `gorm:"type:uuid;not null;index"`
+	TeamID    *uuid.UUID `gorm:"type:uuid;index"`
+	GoogleID  string     `gorm:"type:varchar(255);not null;uniqueIndex"`
+	Email     string     `gorm:"type:varchar(255);not null;uniqueIndex"`
+	Name      string     `gorm:"type:varchar(255);not null"`
+	Role      string     `gorm:"type:varchar(50);not null;default:'member'"`
+	CreatedAt time.Time  `gorm:"autoCreateTime"`
+	UpdatedAt time.Time  `gorm:"autoUpdateTime"`
+}
+
+type TeamModel struct {
 	ID        uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
 	TenantID  uuid.UUID `gorm:"type:uuid;not null;index"`
-	GoogleID  string    `gorm:"type:varchar(255);not null;uniqueIndex"`
-	Email     string    `gorm:"type:varchar(255);not null;uniqueIndex"`
 	Name      string    `gorm:"type:varchar(255);not null"`
-	Role      string    `gorm:"type:varchar(50);not null;default:'member'"`
 	CreatedAt time.Time `gorm:"autoCreateTime"`
 	UpdatedAt time.Time `gorm:"autoUpdateTime"`
 }
+
+func (TeamModel) TableName() string { return "teams" }
 
 func (UserModel) TableName() string { return "users" }
 

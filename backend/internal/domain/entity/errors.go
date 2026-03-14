@@ -13,4 +13,5 @@ var (
 	ErrEmptyTenantName     = errors.New("tenant name cannot be empty")
 	ErrEmptyEmail          = errors.New("email cannot be empty")
 	ErrEmptyGoogleID       = errors.New("google ID cannot be empty")
+	ErrEmptyTeamName       = errors.New("team name cannot be empty")
 )
