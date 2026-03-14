@@ -1,0 +1,169 @@
+package persistence
+
+import (
+	"encoding/json"
+
+	"github.com/eikiwatanabee/PokeWebApp/backend/internal/domain/entity"
+	"github.com/eikiwatanabee/PokeWebApp/backend/internal/domain/valueobject"
+)
+
+// --- Tenant ---
+
+func toTenantModel(e *entity.Tenant) *TenantModel {
+	return &TenantModel{
+		ID:        e.ID,
+		Name:      e.Name,
+		CreatedAt: e.CreatedAt,
+		UpdatedAt: e.UpdatedAt,
+	}
+}
+
+func toTenantEntity(m *TenantModel) *entity.Tenant {
+	return &entity.Tenant{
+		ID:        m.ID,
+		Name:      m.Name,
+		CreatedAt: m.CreatedAt,
+		UpdatedAt: m.UpdatedAt,
+	}
+}
+
+// --- User ---
+
+func toUserModel(e *entity.User) *UserModel {
+	return &UserModel{
+		ID:        e.ID,
+		TenantID:  e.TenantID,
+		GoogleID:  e.GoogleID,
+		Email:     e.Email,
+		Name:      e.Name,
+		Role:      string(e.Role),
+		CreatedAt: e.CreatedAt,
+		UpdatedAt: e.UpdatedAt,
+	}
+}
+
+func toUserEntity(m *UserModel) *entity.User {
+	return &entity.User{
+		ID:        m.ID,
+		TenantID:  m.TenantID,
+		GoogleID:  m.GoogleID,
+		Email:     m.Email,
+		Name:      m.Name,
+		Role:      entity.UserRole(m.Role),
+		CreatedAt: m.CreatedAt,
+		UpdatedAt: m.UpdatedAt,
+	}
+}
+
+// --- Book ---
+
+func toBookModel(e *entity.Book) *BookModel {
+	tags := make([]TagModel, len(e.Tags))
+	for i, t := range e.Tags {
+		tags[i] = *toTagModel(&t)
+	}
+	return &BookModel{
+		ID:         e.ID,
+		UserID:     e.UserID,
+		Title:      e.Title,
+		Author:     e.Author,
+		Status:     e.Status.String(),
+		FinishedAt: e.FinishedAt,
+		CreatedAt:  e.CreatedAt,
+		UpdatedAt:  e.UpdatedAt,
+		Tags:       tags,
+	}
+}
+
+func toBookEntity(m *BookModel) *entity.Book {
+	tags := make([]entity.Tag, len(m.Tags))
+	for i, t := range m.Tags {
+		tags[i] = *toTagEntity(&t)
+	}
+	return &entity.Book{
+		ID:         m.ID,
+		UserID:     m.UserID,
+		Title:      m.Title,
+		Author:     m.Author,
+		Status:     valueobject.BookStatus(m.Status),
+		FinishedAt: m.FinishedAt,
+		CreatedAt:  m.CreatedAt,
+		UpdatedAt:  m.UpdatedAt,
+		Tags:       tags,
+	}
+}
+
+// --- Memo ---
+
+func toMemoModel(e *entity.Memo) *MemoModel {
+	return &MemoModel{
+		ID:        e.ID,
+		BookID:    e.BookID,
+		Content:   e.Content,
+		CreatedAt: e.CreatedAt,
+		UpdatedAt: e.UpdatedAt,
+	}
+}
+
+func toMemoEntity(m *MemoModel) *entity.Memo {
+	return &entity.Memo{
+		ID:        m.ID,
+		BookID:    m.BookID,
+		Content:   m.Content,
+		CreatedAt: m.CreatedAt,
+		UpdatedAt: m.UpdatedAt,
+	}
+}
+
+// --- Tag ---
+
+func toTagModel(e *entity.Tag) *TagModel {
+	return &TagModel{
+		ID:        e.ID,
+		TenantID:  e.TenantID,
+		Name:      e.Name,
+		CreatedAt: e.CreatedAt,
+	}
+}
+
+func toTagEntity(m *TagModel) *entity.Tag {
+	return &entity.Tag{
+		ID:        m.ID,
+		TenantID:  m.TenantID,
+		Name:      m.Name,
+		CreatedAt: m.CreatedAt,
+	}
+}
+
+// --- UserPokemon ---
+
+func toUserPokemonModel(e *entity.UserPokemon) *UserPokemonModel {
+	typesJSON, _ := json.Marshal(e.Pokemon.Types)
+	return &UserPokemonModel{
+		ID:            e.ID,
+		UserID:        e.UserID,
+		BookID:        e.BookID,
+		PokemonID:     e.Pokemon.PokemonID,
+		PokemonName:   e.Pokemon.Name,
+		PokemonSprite: e.Pokemon.SpriteURL,
+		PokemonTypes:  typesJSON,
+		CaughtAt:      e.CaughtAt,
+	}
+}
+
+func toUserPokemonEntity(m *UserPokemonModel) *entity.UserPokemon {
+	var types []string
+	_ = json.Unmarshal(m.PokemonTypes, &types)
+	return &entity.UserPokemon{
+		ID:     m.ID,
+		UserID: m.UserID,
+		BookID: m.BookID,
+		Pokemon: valueobject.PokemonInfo{
+			PokemonID: m.PokemonID,
+			Name:      m.PokemonName,
+			SpriteURL: m.PokemonSprite,
+			Types:     types,
+		},
+		CaughtAt: m.CaughtAt,
+	}
+}
