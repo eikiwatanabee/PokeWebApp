@@ -1,15 +1,33 @@
 package router
 
 import (
+	"github.com/eikiwatanabee/PokeWebApp/backend/internal/infrastructure/auth"
 	"github.com/eikiwatanabee/PokeWebApp/backend/internal/presentation/handler"
+	"github.com/eikiwatanabee/PokeWebApp/backend/internal/presentation/middleware"
 	"github.com/gin-gonic/gin"
 )
 
 func Setup(
 	r *gin.Engine,
+	jwtManager *auth.JWTManager,
+	authHandler *handler.AuthHandler,
 	bookHandler *handler.BookHandler,
+	memoHandler *handler.MemoHandler,
+	tagHandler *handler.TagHandler,
 	pokedexHandler *handler.PokedexHandler,
 ) {
+	// CORS
+	r.Use(func(c *gin.Context) {
+		c.Header("Access-Control-Allow-Origin", "*")
+		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
+		c.Next()
+	})
+
 	api := r.Group("/api")
 
 	// Health check
@@ -17,18 +35,53 @@ func Setup(
 		c.JSON(200, gin.H{"status": "ok"})
 	})
 
-	// TODO: Add auth middleware
-	// api.Use(middleware.Auth())
-
-	books := api.Group("/books")
+	// Auth (public)
+	authGroup := api.Group("/auth")
 	{
-		books.POST("", bookHandler.Register)
-		books.GET("", bookHandler.GetBooks)
-		books.POST("/:id/finish", bookHandler.FinishReading)
+		authGroup.GET("/google", authHandler.GoogleLogin)
+		authGroup.GET("/google/callback", authHandler.GoogleCallback)
+		authGroup.POST("/refresh", authHandler.RefreshToken)
 	}
 
-	pokedex := api.Group("/pokedex")
+	// Protected routes
+	protected := api.Group("")
+	protected.Use(middleware.AuthRequired(jwtManager))
 	{
-		pokedex.GET("", pokedexHandler.GetPokedex)
+		// Books
+		books := protected.Group("/books")
+		{
+			books.POST("", bookHandler.Register)
+			books.GET("", bookHandler.GetBooks)
+			books.GET("/:id", bookHandler.GetBookDetail)
+			books.PUT("/:id", bookHandler.UpdateBook)
+			books.DELETE("/:id", bookHandler.DeleteBook)
+			books.POST("/:id/start", bookHandler.StartReading)
+			books.POST("/:id/finish", bookHandler.FinishReading)
+
+			// Memos (nested under books)
+			books.POST("/:id/memos", memoHandler.AddMemo)
+			books.GET("/:id/memos", memoHandler.GetMemos)
+		}
+
+		// Memos (standalone for update/delete)
+		memos := protected.Group("/memos")
+		{
+			memos.PUT("/:id", memoHandler.UpdateMemo)
+			memos.DELETE("/:id", memoHandler.DeleteMemo)
+		}
+
+		// Tags
+		tags := protected.Group("/tags")
+		{
+			tags.POST("", tagHandler.CreateTag)
+			tags.GET("", tagHandler.GetTags)
+			tags.DELETE("/:id", tagHandler.DeleteTag)
+		}
+
+		// Pokedex
+		pokedex := protected.Group("/pokedex")
+		{
+			pokedex.GET("", pokedexHandler.GetPokedex)
+		}
 	}
 }
