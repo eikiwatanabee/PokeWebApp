@@ -150,6 +150,65 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"access_token": accessToken})
 }
 
+// DevLogin creates a dummy user for local development (no Google OAuth required).
+func (h *AuthHandler) DevLogin(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	// Use a fixed Google ID for the dev user
+	devGoogleID := "dev-user-local"
+	user, err := h.userRepo.FindByGoogleID(ctx, devGoogleID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "database error"})
+		return
+	}
+
+	if user == nil {
+		tenant, err := entity.NewTenant("Dev Team")
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create tenant"})
+			return
+		}
+		if err := h.tenantRepo.Save(ctx, tenant); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save tenant"})
+			return
+		}
+
+		user, err = entity.NewUser(tenant.ID, devGoogleID, "dev@localhost", "Dev User")
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create user"})
+			return
+		}
+		user.PromoteToAdmin()
+		if err := h.userRepo.Save(ctx, user); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save user"})
+			return
+		}
+	}
+
+	accessToken, err := h.jwtManager.GenerateAccessToken(user.ID, user.TenantID, user.Email, string(user.Role))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate token"})
+		return
+	}
+
+	refreshToken, err := h.jwtManager.GenerateRefreshToken(user.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate refresh token"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"access_token":  accessToken,
+		"refresh_token": refreshToken,
+		"user": gin.H{
+			"id":    user.ID.String(),
+			"name":  user.Name,
+			"email": user.Email,
+			"role":  user.Role,
+		},
+	})
+}
+
 func generateState() string {
 	b := make([]byte, 16)
 	rand.Read(b)

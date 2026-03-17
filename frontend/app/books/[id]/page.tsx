@@ -31,7 +31,7 @@ export default function BookDetailPage() {
     try {
       await api.startReading(id)
       fetchBook()
-    } catch (err) { alert(err instanceof Error ? err.message : 'Error') }
+    } catch (err) { alert(err instanceof Error ? err.message : 'エラーが発生しました') }
   }
 
   const handleFinishReading = async () => {
@@ -39,7 +39,7 @@ export default function BookDetailPage() {
       const result = await api.finishReading(id)
       setCaughtPokemon(result.pokemon)
       fetchBook()
-    } catch (err) { alert(err instanceof Error ? err.message : 'Error') }
+    } catch (err) { alert(err instanceof Error ? err.message : 'エラーが発生しました') }
   }
 
   const handleAddMemo = async () => {
@@ -48,33 +48,42 @@ export default function BookDetailPage() {
       await api.addMemo(id, newMemo.trim())
       setNewMemo('')
       fetchBook()
-    } catch (err) { alert(err instanceof Error ? err.message : 'Error') }
+    } catch (err) { alert(err instanceof Error ? err.message : 'エラーが発生しました') }
   }
 
   const handleDeleteMemo = async (memoId: string) => {
-    if (!confirm('Delete this memo?')) return
+    if (!confirm('このメモを削除しますか？')) return
     try {
       await api.deleteMemo(memoId)
       fetchBook()
-    } catch (err) { alert(err instanceof Error ? err.message : 'Error') }
+    } catch (err) { alert(err instanceof Error ? err.message : 'エラーが発生しました') }
   }
 
   const handleDeleteBook = async () => {
-    if (!confirm('Delete this book?')) return
+    if (!confirm('この本を削除しますか？')) return
     try {
       await api.deleteBook(id)
       router.push('/books')
-    } catch (err) { alert(err instanceof Error ? err.message : 'Error') }
+    } catch (err) { alert(err instanceof Error ? err.message : 'エラーが発生しました') }
   }
 
-  if (loading || !book) return <div className="min-h-screen flex items-center justify-center"><p>Loading...</p></div>
+  if (loading || !book) return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="animate-pokeball-shake">
+        <div className="w-16 h-16 bg-[#DC0A2D] rounded-full border-4 border-gray-800 relative">
+          <div className="absolute top-1/2 left-0 right-0 h-1 bg-gray-800" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full border-2 border-gray-800" />
+        </div>
+      </div>
+    </div>
+  )
 
   return (
     <>
       <Navbar />
       <main className="max-w-4xl mx-auto px-4 py-8">
         <button onClick={() => router.push('/books')} className="text-sm text-gray-500 hover:text-gray-700 mb-4 inline-block">
-          &larr; Back to Books
+          ← 本棚に戻る
         </button>
 
         <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
@@ -98,38 +107,38 @@ export default function BookDetailPage() {
 
           <div className="flex gap-2 pt-2">
             {book.status === 'unread' && (
-              <button onClick={handleStartReading} className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
-                Start Reading
+              <button onClick={handleStartReading} className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium">
+                📖 読み始める
               </button>
             )}
             {book.status === 'reading' && (
-              <button onClick={handleFinishReading} className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
-                Finish Reading
+              <button onClick={handleFinishReading} className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-medium">
+                ✅ 読了にする（ポケモンゲット！）
               </button>
             )}
             <button onClick={handleDeleteBook} className="px-4 py-2 border border-red-200 text-red-500 rounded-lg hover:bg-red-50 transition-colors">
-              Delete
+              削除
             </button>
           </div>
         </div>
 
         {/* Memos */}
         <div className="bg-white rounded-xl shadow-sm p-6">
-          <h2 className="text-lg font-bold mb-4">Memos</h2>
+          <h2 className="text-lg font-bold mb-4">📝 メモ</h2>
 
           <div className="flex gap-2 mb-4">
             <textarea
               value={newMemo} onChange={e => setNewMemo(e.target.value)}
               className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none resize-none"
-              rows={2} placeholder="Write a memo..."
+              rows={2} placeholder="メモを書く..."
             />
             <button onClick={handleAddMemo} className="px-4 py-2 bg-[#DC0A2D] text-white rounded-lg hover:bg-[#b8091f] transition-colors self-end">
-              Add
+              追加
             </button>
           </div>
 
           {book.memos.length === 0 ? (
-            <p className="text-gray-400 text-sm">No memos yet</p>
+            <p className="text-gray-400 text-sm">まだメモはありません</p>
           ) : (
             <ul className="space-y-3">
               {book.memos.map(memo => (
@@ -140,7 +149,7 @@ export default function BookDetailPage() {
                       {new Date(memo.created_at).toLocaleDateString('ja-JP')}
                     </span>
                     <button onClick={() => handleDeleteMemo(memo.id)} className="text-xs text-red-400 hover:text-red-600">
-                      Delete
+                      削除
                     </button>
                   </div>
                 </li>

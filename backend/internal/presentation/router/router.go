@@ -43,6 +43,7 @@ func Setup(
 		authGroup.GET("/google", authHandler.GoogleLogin)
 		authGroup.GET("/google/callback", authHandler.GoogleCallback)
 		authGroup.POST("/refresh", authHandler.RefreshToken)
+		authGroup.POST("/dev-login", authHandler.DevLogin)
 	}
 
 	// Protected routes

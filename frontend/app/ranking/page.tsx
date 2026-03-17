@@ -60,18 +60,28 @@ export default function RankingPage() {
     }
   }
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><p>Loading...</p></div>
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="animate-pokeball-shake">
+        <div className="w-16 h-16 bg-[#DC0A2D] rounded-full border-4 border-gray-800 relative">
+          <div className="absolute top-1/2 left-0 right-0 h-1 bg-gray-800" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full border-2 border-gray-800" />
+        </div>
+      </div>
+    </div>
+  )
 
   return (
     <>
       <Navbar />
       <main className="max-w-4xl mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Team Ranking</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">🏆 チームランキング</h1>
         <p className="text-gray-500 mb-6">チーム対抗！ポケモンゲット数で競おう</p>
 
         {teams.length === 0 ? (
           <div className="bg-white rounded-xl shadow-sm p-8 text-center">
-            <p className="text-gray-400 text-lg mb-4">まだチームがありません</p>
+            <p className="text-4xl mb-4">🏟️</p>
+            <p className="text-gray-400 text-lg mb-2">まだチームがありません</p>
             <p className="text-gray-500 text-sm">最初のチームを作って仲間を集めよう！</p>
           </div>
         ) : (
@@ -90,23 +100,23 @@ export default function RankingPage() {
                     </span>
                     <div>
                       <h2 className="text-lg font-bold text-gray-900">{team.team_name}</h2>
-                      <p className="text-sm text-gray-500">{team.member_count} members</p>
+                      <p className="text-sm text-gray-500">{team.member_count} 人のメンバー</p>
                     </div>
                   </div>
                   <div className="flex gap-6 items-center">
                     <div className="text-center">
                       <p className="text-2xl font-bold text-[#DC0A2D]">{team.pokemon_count}</p>
-                      <p className="text-xs text-gray-500">Pokemon</p>
+                      <p className="text-xs text-gray-500">ポケモン</p>
                     </div>
                     <div className="text-center">
                       <p className="text-2xl font-bold text-green-600">{team.book_count}</p>
-                      <p className="text-xs text-gray-500">Books</p>
+                      <p className="text-xs text-gray-500">冊</p>
                     </div>
                     <button
                       onClick={() => handleJoinTeam(team.team_id)}
                       className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors"
                     >
-                      Join
+                      参加する
                     </button>
                   </div>
                 </div>
@@ -116,7 +126,7 @@ export default function RankingPage() {
         )}
 
         <div className="bg-white rounded-xl shadow-sm p-6">
-          <h2 className="text-lg font-bold mb-4">Create New Team</h2>
+          <h2 className="text-lg font-bold mb-4">新しいチームを作る</h2>
           <div className="flex gap-3">
             <input
               type="text"
@@ -131,7 +141,7 @@ export default function RankingPage() {
               disabled={creating || !newTeamName.trim()}
               className="bg-[#DC0A2D] hover:bg-red-700 disabled:bg-gray-300 text-white font-medium py-2 px-6 rounded-lg transition-colors"
             >
-              {creating ? '作成中...' : 'Create'}
+              {creating ? '作成中...' : 'チーム作成'}
             </button>
           </div>
         </div>

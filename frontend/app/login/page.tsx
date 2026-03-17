@@ -1,11 +1,11 @@
 'use client'
 
-import { useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
 import { isLoggedIn, saveAuth } from '@/lib/auth'
 
-export default function LoginPage() {
+function LoginContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const code = searchParams.get('code')
@@ -28,27 +28,45 @@ export default function LoginPage() {
       const { url } = await api.getGoogleAuthURL()
       window.location.href = url
     } catch {
-      alert('Failed to get auth URL. Make sure the API server is running.')
+      alert('認証URLの取得に失敗しました。APIサーバーが起動しているか確認してください。')
     }
   }
 
   if (code) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-lg text-gray-600">Logging in...</p>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#DC0A2D] to-[#b8091f]">
+        <div className="animate-pokeball-shake">
+          <div className="w-16 h-16 bg-white rounded-full border-4 border-gray-800 relative">
+            <div className="absolute top-1/2 left-0 right-0 h-1 bg-gray-800" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full border-2 border-gray-800" />
+          </div>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#DC0A2D] to-[#b8091f]">
-      <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4 text-center">
-        <div className="w-20 h-20 mx-auto mb-4 bg-[#DC0A2D] rounded-full border-4 border-gray-800 relative">
-          <div className="absolute top-1/2 left-0 right-0 h-1 bg-gray-800" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-5 h-5 bg-white rounded-full border-2 border-gray-800" />
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#DC0A2D] to-[#b8091f] relative overflow-hidden">
+      {/* Background pokeballs */}
+      <div className="absolute inset-0 opacity-5">
+        <div className="absolute top-10 left-10 w-40 h-40 bg-white rounded-full" />
+        <div className="absolute bottom-20 right-20 w-60 h-60 bg-white rounded-full" />
+        <div className="absolute top-1/3 right-10 w-20 h-20 bg-white rounded-full" />
+      </div>
+
+      <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4 text-center relative z-10">
+        {/* Pokeball icon */}
+        <div className="w-24 h-24 mx-auto mb-4 relative">
+          <div className="w-24 h-24 bg-[#DC0A2D] rounded-full border-4 border-gray-800 relative overflow-hidden">
+            <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-white" />
+            <div className="absolute top-1/2 left-0 right-0 h-1 bg-gray-800 -translate-y-1/2" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6 bg-white rounded-full border-3 border-gray-800" />
+          </div>
         </div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">PokeBookManager</h1>
-        <p className="text-gray-500 mb-8">Read books, catch Pokemon!</p>
+
+        <h1 className="text-3xl font-bold text-gray-900 mb-1">PokeBookManager</h1>
+        <p className="text-gray-500 mb-8">本を読んで、ポケモンをゲットしよう！</p>
+
         <button
           onClick={handleLogin}
           className="w-full flex items-center justify-center gap-3 px-6 py-3 bg-white border-2 border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-gray-700 font-medium"
@@ -59,9 +77,40 @@ export default function LoginPage() {
             <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
           </svg>
-          Sign in with Google
+          Googleでログイン
+        </button>
+        <button
+          onClick={async () => {
+            try {
+              const data = await api.devLogin()
+              saveAuth(data.access_token, data.refresh_token, data.user)
+              router.push('/')
+            } catch {
+              alert('開発ログインに失敗しました。APIサーバーが起動しているか確認してください。')
+            }
+          }}
+          className="w-full mt-3 px-6 py-3 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium text-sm"
+        >
+          開発用ログイン（ローカルのみ）
         </button>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#DC0A2D] to-[#b8091f]">
+        <div className="animate-pokeball-shake">
+          <div className="w-16 h-16 bg-white rounded-full border-4 border-gray-800 relative">
+            <div className="absolute top-1/2 left-0 right-0 h-1 bg-gray-800" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full border-2 border-gray-800" />
+          </div>
+        </div>
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   )
 }

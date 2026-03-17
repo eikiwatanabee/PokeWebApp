@@ -28,7 +28,7 @@ export default function NewBookPage() {
       await api.createBook({ title, author, tag_ids: selectedTags })
       router.push('/books')
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to create book')
+      alert(err instanceof Error ? err.message : '本の作成に失敗しました')
     } finally {
       setSubmitting(false)
     }
@@ -43,7 +43,7 @@ export default function NewBookPage() {
       setSelectedTags([...selectedTags, tag.id])
       setNewTag('')
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to create tag')
+      alert(err instanceof Error ? err.message : 'タグの作成に失敗しました')
     }
   }
 
@@ -55,26 +55,26 @@ export default function NewBookPage() {
     <>
       <Navbar />
       <main className="max-w-2xl mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Add New Book</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-6">📕 新しい本を追加</h1>
         <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm p-6 space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">タイトル</label>
             <input
               type="text" required value={title} onChange={e => setTitle(e.target.value)}
               className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#DC0A2D] focus:border-transparent outline-none"
-              placeholder="Book title"
+              placeholder="本のタイトル"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Author</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">著者</label>
             <input
               type="text" required value={author} onChange={e => setAuthor(e.target.value)}
               className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#DC0A2D] focus:border-transparent outline-none"
-              placeholder="Author name"
+              placeholder="著者名"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Tags</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">タグ</label>
             <div className="flex flex-wrap gap-2 mb-2">
               {tags.map(tag => (
                 <button
@@ -93,23 +93,23 @@ export default function NewBookPage() {
               <input
                 type="text" value={newTag} onChange={e => setNewTag(e.target.value)}
                 className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none"
-                placeholder="New tag name"
+                placeholder="新しいタグ名"
                 onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
               />
               <button type="button" onClick={handleAddTag} className="px-3 py-2 bg-gray-100 rounded-lg text-sm hover:bg-gray-200">
-                Add
+                追加
               </button>
             </div>
           </div>
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={() => router.back()} className="px-4 py-2 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50">
-              Cancel
+              キャンセル
             </button>
             <button
               type="submit" disabled={submitting}
               className="px-6 py-2 bg-[#DC0A2D] text-white rounded-lg hover:bg-[#b8091f] transition-colors disabled:opacity-50"
             >
-              {submitting ? 'Creating...' : 'Create Book'}
+              {submitting ? '作成中...' : '本を登録する'}
             </button>
           </div>
         </form>

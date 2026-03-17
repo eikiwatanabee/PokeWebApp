@@ -71,6 +71,10 @@ class ApiClient {
     return this.request(`/api/auth/google/callback?code=${code}`)
   }
 
+  async devLogin(): Promise<AuthTokens> {
+    return this.request('/api/auth/dev-login', { method: 'POST' })
+  }
+
   // Books
   async getBooks(params?: { status?: string; tag_id?: string; page?: number }): Promise<{ books: BookListItem[]; total_count: number; page: number }> {
     const searchParams = new URLSearchParams()

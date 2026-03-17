@@ -8,16 +8,17 @@ import (
 )
 
 type Book struct {
-	ID         uuid.UUID
-	UserID     uuid.UUID
-	Title      string
-	Author     string
-	Status     valueobject.BookStatus
-	FinishedAt *time.Time
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
-	Tags       []Tag
-	Memos      []Memo
+	ID             uuid.UUID
+	UserID         uuid.UUID
+	CatalogBookID  *uuid.UUID
+	Title          string
+	Author         string
+	Status         valueobject.BookStatus
+	FinishedAt     *time.Time
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	Tags           []Tag
+	Memos          []Memo
 }
 
 func NewBook(userID uuid.UUID, title, author string) (*Book, error) {
