@@ -17,6 +17,7 @@ type AchievementDTO struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Icon        string `json:"icon"`
+	Category    string `json:"category"`
 	UnlockedAt  string `json:"unlocked_at"`
 }
 
@@ -94,6 +95,7 @@ func (h *GetUserStatsHandler) Handle(ctx context.Context, q *GetUserStatsQuery) 
 				Name:        def.Name,
 				Description: def.Description,
 				Icon:        def.Icon,
+				Category:    def.Category,
 				UnlockedAt:  a.UnlockedAt.Format("2006-01-02T15:04:05Z"),
 			})
 		}

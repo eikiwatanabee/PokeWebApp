@@ -81,6 +81,7 @@ export interface Achievement {
   name: string
   description: string
   icon: string
+  category: string
   unlocked_at: string
 }
 

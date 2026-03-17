@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Navbar } from '@/components/Navbar'
 import { api } from '@/lib/api'
 import { isLoggedIn, getUser } from '@/lib/auth'
-import type { Pokemon, GitHubActivity, UserStats, PokemonRarity } from '@/lib/types'
+import type { Pokemon, GitHubActivity, UserStats, PokemonRarity, Achievement } from '@/lib/types'
 
 const eventIcons: Record<string, string> = {
   commit: '💻',
@@ -37,6 +37,29 @@ const rarityBadgeColors: Record<PokemonRarity, string> = {
   rare: 'bg-blue-200 text-blue-800',
   epic: 'bg-purple-200 text-purple-800',
   legendary: 'bg-yellow-200 text-yellow-800',
+}
+
+const categoryLabels: Record<string, string> = {
+  commit: '💻 コミット',
+  streak: '🔥 ストリーク',
+  level: '⬆️ レベル',
+  xp: '✨ 経験値',
+  pokemon: '⚡ ポケモン',
+  rarity: '💎 レアリティ',
+  pr: '🔀 プルリクエスト',
+  review: '👀 レビュー',
+  issue: '🐛 Issue',
+  special: '🎯 スペシャル',
+}
+
+function groupAchievementsByCategory(achievements: Achievement[]): Record<string, Achievement[]> {
+  const groups: Record<string, Achievement[]> = {}
+  for (const a of achievements) {
+    const cat = a.category || 'other'
+    if (!groups[cat]) groups[cat] = []
+    groups[cat].push(a)
+  }
+  return groups
 }
 
 export default function DashboardPage() {
@@ -221,19 +244,24 @@ export default function DashboardPage() {
               <h2 className="text-lg font-bold">アチーブメント</h2>
               <span className="text-sm text-gray-400 ml-auto">{stats.achievements.length}個 達成</span>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-              {stats.achievements.map(a => (
-                <div
-                  key={a.type}
-                  className="flex flex-col items-center p-3 bg-gradient-to-b from-yellow-50 to-white rounded-xl border border-yellow-200"
-                  title={a.description}
-                >
-                  <span className="text-3xl mb-1">{a.icon}</span>
-                  <span className="text-xs font-bold text-center">{a.name}</span>
-                  <span className="text-[10px] text-gray-400 text-center mt-0.5">{a.description}</span>
+            {Object.entries(groupAchievementsByCategory(stats.achievements)).map(([category, achievements]) => (
+              <div key={category} className="mb-4 last:mb-0">
+                <p className="text-xs font-bold text-gray-500 uppercase mb-2">{categoryLabels[category] || category}</p>
+                <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                  {achievements.map(a => (
+                    <div
+                      key={a.type}
+                      className="flex flex-col items-center p-2.5 bg-gradient-to-b from-yellow-50 to-white rounded-xl border border-yellow-200 hover:shadow-md transition-shadow"
+                      title={a.description}
+                    >
+                      <span className="text-2xl mb-0.5">{a.icon}</span>
+                      <span className="text-[11px] font-bold text-center leading-tight">{a.name}</span>
+                      <span className="text-[9px] text-gray-400 text-center mt-0.5">{a.description}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
         )}
 
