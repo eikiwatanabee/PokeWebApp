@@ -44,7 +44,7 @@ export default function SettingsPage() {
     <>
       <Navbar />
       <main className="max-w-2xl mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">⚙️ 設定</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-6">設定</h1>
 
         {/* User Info */}
         <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
@@ -58,9 +58,43 @@ export default function SettingsPage() {
               <span className="text-gray-500">メール</span>
               <span className="font-medium">{user?.email}</span>
             </div>
+            {user?.github_username && (
+              <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                <span className="text-gray-500">GitHub</span>
+                <span className="font-medium">@{user.github_username}</span>
+              </div>
+            )}
+            <div className="flex justify-between items-center py-2 border-b border-gray-100">
+              <span className="text-gray-500">レベル</span>
+              <span className="font-medium text-green-600">Lv.{user?.level || 1}</span>
+            </div>
             <div className="flex justify-between items-center py-2">
               <span className="text-gray-500">ロール</span>
               <span className="font-medium">{user?.role ? roleLabels[user.role] || user.role : ''}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Webhook Setup */}
+        <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+          <h2 className="text-lg font-bold mb-2">GitHub Webhook 設定</h2>
+          <p className="text-sm text-gray-500 mb-4">
+            GitHubリポジトリにWebhookを設定すると、コミットやPRマージが自動で記録されます。
+          </p>
+          <div className="bg-gray-50 rounded-lg p-4 space-y-3 text-sm">
+            <div>
+              <span className="text-gray-500 block mb-1">Payload URL:</span>
+              <code className="bg-gray-200 px-2 py-1 rounded text-xs">
+                {typeof window !== 'undefined' ? `${window.location.origin.replace(':3000', ':8080')}/api/webhook/github` : '/api/webhook/github'}
+              </code>
+            </div>
+            <div>
+              <span className="text-gray-500 block mb-1">Content type:</span>
+              <code className="bg-gray-200 px-2 py-1 rounded text-xs">application/json</code>
+            </div>
+            <div>
+              <span className="text-gray-500 block mb-1">Events:</span>
+              <span className="text-gray-700">Push, Pull requests, Pull request reviews, Issues</span>
             </div>
           </div>
         </div>
@@ -77,7 +111,7 @@ export default function SettingsPage() {
               placeholder="新しいタグ名"
               onKeyDown={e => e.key === 'Enter' && handleAddTag()}
             />
-            <button onClick={handleAddTag} className="px-4 py-2 bg-[#DC0A2D] text-white rounded-lg text-sm hover:bg-[#b8091f]">
+            <button onClick={handleAddTag} className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm hover:bg-gray-700">
               追加
             </button>
           </div>

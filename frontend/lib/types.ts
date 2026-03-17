@@ -36,7 +36,7 @@ export interface Pokemon {
   pokemon_name: string
   sprite_url: string
   types: string[]
-  book_id: string
+  activity_id: string
   caught_at: string
 }
 
@@ -51,10 +51,33 @@ export interface User {
   name: string
   email: string
   role: string
+  github_username?: string
+  avatar_url?: string
+  level?: number
+  total_xp?: number
 }
 
 export interface AuthTokens {
   access_token: string
   refresh_token: string
   user: User
+}
+
+export interface GitHubActivity {
+  id: string
+  event_type: 'commit' | 'pr_merge' | 'pr_open' | 'issue_close' | 'review'
+  repo_name: string
+  title: string
+  url: string
+  xp: number
+  created_at: string
+}
+
+export interface UserStats {
+  total_xp: number
+  level: number
+  xp_to_next_level: number
+  total_commits: number
+  total_merges: number
+  pokemon_count: number
 }

@@ -62,7 +62,7 @@ export default function PokedexPage() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h1 className="text-2xl font-bold text-white">ポケモン図鑑</h1>
-              <p className="text-white/70 text-sm">つかまえた ポケモンの データ</p>
+              <p className="text-white/70 text-sm">PRマージで ゲットした ポケモンの データ</p>
             </div>
             <div className="bg-white/20 rounded-full px-4 py-2">
               <span className="text-white font-bold text-lg">{pokemon.length}</span>
@@ -90,12 +90,6 @@ export default function PokedexPage() {
                   <p className="text-gray-400 text-xs mt-3">
                     捕獲日: {new Date(selected.caught_at).toLocaleDateString('ja-JP')}
                   </p>
-                  <button
-                    onClick={() => router.push(`/books/${selected.book_id}`)}
-                    className="mt-3 text-green-400 text-xs hover:text-green-300 transition-colors"
-                  >
-                    📖 この本を見る →
-                  </button>
                 </div>
               </div>
               <button
@@ -120,13 +114,7 @@ export default function PokedexPage() {
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-5 h-5 bg-white rounded-full border-2 border-gray-300" />
             </div>
             <p className="text-lg font-bold">まだポケモンがいません</p>
-            <p className="text-sm mt-1">本を読み終えて、最初のポケモンをゲットしよう！</p>
-            <button
-              onClick={() => router.push('/books')}
-              className="mt-4 px-6 py-2 bg-[#DC0A2D] text-white rounded-full hover:bg-[#b8091f] transition-colors text-sm font-bold"
-            >
-              本棚へ行く
-            </button>
+            <p className="text-sm mt-1">PRをマージして、最初のポケモンをゲットしよう！</p>
           </div>
         ) : (
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">

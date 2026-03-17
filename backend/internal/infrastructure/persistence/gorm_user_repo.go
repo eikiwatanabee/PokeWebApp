@@ -41,6 +41,18 @@ func (r *GormUserRepository) FindByGoogleID(ctx context.Context, googleID string
 	return toUserEntity(&model), nil
 }
 
+func (r *GormUserRepository) FindByGitHubUsername(ctx context.Context, username string) (*entity.User, error) {
+	tx := GetTx(ctx, r.db)
+	var model UserModel
+	if err := tx.First(&model, "git_hub_username = ?", username).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return toUserEntity(&model), nil
+}
+
 func (r *GormUserRepository) FindByTenantID(ctx context.Context, tenantID uuid.UUID) ([]*entity.User, error) {
 	tx := GetTx(ctx, r.db)
 	var models []UserModel

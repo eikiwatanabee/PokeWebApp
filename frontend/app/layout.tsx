@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'PokeBookManager - 本を読んでポケモンをゲットしよう！',
-  description: '読書記録をつけて、ポケモンを集めよう！',
+  title: 'PokeGitHub - GitHubで活動してポケモンをゲットしよう！',
+  description: 'GitHubのコミットで経験値UP、PRマージでポケモンゲット！',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

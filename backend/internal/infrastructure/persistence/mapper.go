@@ -31,29 +31,39 @@ func toTenantEntity(m *TenantModel) *entity.Tenant {
 
 func toUserModel(e *entity.User) *UserModel {
 	return &UserModel{
-		ID:        e.ID,
-		TenantID:  e.TenantID,
-		TeamID:    e.TeamID,
-		GoogleID:  e.GoogleID,
-		Email:     e.Email,
-		Name:      e.Name,
-		Role:      string(e.Role),
-		CreatedAt: e.CreatedAt,
-		UpdatedAt: e.UpdatedAt,
+		ID:             e.ID,
+		TenantID:       e.TenantID,
+		TeamID:         e.TeamID,
+		GoogleID:       e.GoogleID,
+		GitHubID:       e.GitHubID,
+		GitHubUsername: e.GitHubUsername,
+		Email:          e.Email,
+		Name:           e.Name,
+		AvatarURL:      e.AvatarURL,
+		TotalXP:        e.TotalXP,
+		Level:          e.Level,
+		Role:           string(e.Role),
+		CreatedAt:      e.CreatedAt,
+		UpdatedAt:      e.UpdatedAt,
 	}
 }
 
 func toUserEntity(m *UserModel) *entity.User {
 	return &entity.User{
-		ID:        m.ID,
-		TenantID:  m.TenantID,
-		TeamID:    m.TeamID,
-		GoogleID:  m.GoogleID,
-		Email:     m.Email,
-		Name:      m.Name,
-		Role:      entity.UserRole(m.Role),
-		CreatedAt: m.CreatedAt,
-		UpdatedAt: m.UpdatedAt,
+		ID:             m.ID,
+		TenantID:       m.TenantID,
+		TeamID:         m.TeamID,
+		GoogleID:       m.GoogleID,
+		GitHubID:       m.GitHubID,
+		GitHubUsername: m.GitHubUsername,
+		Email:          m.Email,
+		Name:           m.Name,
+		AvatarURL:      m.AvatarURL,
+		TotalXP:        m.TotalXP,
+		Level:          m.Level,
+		Role:           entity.UserRole(m.Role),
+		CreatedAt:      m.CreatedAt,
+		UpdatedAt:      m.UpdatedAt,
 	}
 }
 
@@ -157,9 +167,10 @@ func toUserPokemonEntity(m *UserPokemonModel) *entity.UserPokemon {
 	var types []string
 	_ = json.Unmarshal(m.PokemonTypes, &types)
 	return &entity.UserPokemon{
-		ID:     m.ID,
-		UserID: m.UserID,
-		BookID: m.BookID,
+		ID:         m.ID,
+		UserID:     m.UserID,
+		BookID:     m.BookID,
+		ActivityID: m.BookID,
 		Pokemon: valueobject.PokemonInfo{
 			PokemonID: m.PokemonID,
 			Name:      m.PokemonName,
@@ -189,5 +200,33 @@ func mapTeamModelToEntity(m *TeamModel) *entity.Team {
 		Name:      m.Name,
 		CreatedAt: m.CreatedAt,
 		UpdatedAt: m.UpdatedAt,
+	}
+}
+
+// --- GitHubActivity ---
+
+func toGitHubActivityModel(e *entity.GitHubActivity) *GitHubActivityModel {
+	return &GitHubActivityModel{
+		ID:        e.ID,
+		UserID:    e.UserID,
+		EventType: string(e.EventType),
+		RepoName:  e.RepoName,
+		Title:     e.Title,
+		URL:       e.URL,
+		XP:        e.XP,
+		CreatedAt: e.CreatedAt,
+	}
+}
+
+func toGitHubActivityEntity(m *GitHubActivityModel) *entity.GitHubActivity {
+	return &entity.GitHubActivity{
+		ID:        m.ID,
+		UserID:    m.UserID,
+		EventType: entity.GitHubEventType(m.EventType),
+		RepoName:  m.RepoName,
+		Title:     m.Title,
+		URL:       m.URL,
+		XP:        m.XP,
+		CreatedAt: m.CreatedAt,
 	}
 }

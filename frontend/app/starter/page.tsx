@@ -84,7 +84,7 @@ export default function StarterPage() {
             をパートナーに選んだ！
           </p>
           <p className="text-gray-400 mb-8">
-            本を読了してポケモンをたくさんゲットしよう！
+            PRをマージしてポケモンをたくさんゲットしよう！
           </p>
           <button
             onClick={() => router.push('/')}
@@ -105,7 +105,7 @@ export default function StarterPage() {
             パートナーを選ぼう！
           </h1>
           <p className="text-gray-400 text-lg">
-            最初のポケモンを1匹選んでください。あなたの読書の旅のパートナーになります。
+            最初のポケモンを1匹選んでください。あなたの開発の旅のパートナーになります。
           </p>
         </div>
 

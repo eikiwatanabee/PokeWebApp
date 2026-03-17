@@ -17,6 +17,8 @@ func Setup(
 	pokedexHandler *handler.PokedexHandler,
 	starterHandler *handler.StarterHandler,
 	teamHandler *handler.TeamHandler,
+	webhookHandler *handler.WebhookHandler,
+	activityHandler *handler.ActivityHandler,
 ) {
 	// CORS
 	r.Use(func(c *gin.Context) {
@@ -42,15 +44,29 @@ func Setup(
 	{
 		authGroup.GET("/google", authHandler.GoogleLogin)
 		authGroup.GET("/google/callback", authHandler.GoogleCallback)
+		authGroup.GET("/github", authHandler.GitHubLogin)
+		authGroup.GET("/github/callback", authHandler.GitHubCallback)
 		authGroup.POST("/refresh", authHandler.RefreshToken)
 		authGroup.POST("/dev-login", authHandler.DevLogin)
 	}
+
+	// GitHub Webhook (public, verified by signature)
+	api.POST("/webhook/github", webhookHandler.HandleGitHubWebhook)
 
 	// Protected routes
 	protected := api.Group("")
 	protected.Use(middleware.AuthRequired(jwtManager))
 	{
-		// Books
+		// GitHub Activities
+		activities := protected.Group("/activities")
+		{
+			activities.GET("", activityHandler.GetActivities)
+		}
+
+		// User Stats
+		protected.GET("/stats", activityHandler.GetStats)
+
+		// Books (kept for backwards compatibility)
 		books := protected.Group("/books")
 		{
 			books.POST("", bookHandler.Register)

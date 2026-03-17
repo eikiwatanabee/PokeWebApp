@@ -20,15 +20,20 @@ type TenantModel struct {
 func (TenantModel) TableName() string { return "tenants" }
 
 type UserModel struct {
-	ID        uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
-	TenantID  uuid.UUID  `gorm:"type:uuid;not null;index"`
-	TeamID    *uuid.UUID `gorm:"type:uuid;index"`
-	GoogleID  string     `gorm:"type:varchar(255);not null;uniqueIndex"`
-	Email     string     `gorm:"type:varchar(255);not null;uniqueIndex"`
-	Name      string     `gorm:"type:varchar(255);not null"`
-	Role      string     `gorm:"type:varchar(50);not null;default:'member'"`
-	CreatedAt time.Time  `gorm:"autoCreateTime"`
-	UpdatedAt time.Time  `gorm:"autoUpdateTime"`
+	ID             uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
+	TenantID       uuid.UUID  `gorm:"type:uuid;not null;index"`
+	TeamID         *uuid.UUID `gorm:"type:uuid;index"`
+	GoogleID       string     `gorm:"type:varchar(255);not null;uniqueIndex"`
+	GitHubID       string     `gorm:"type:varchar(255);index"`
+	GitHubUsername string     `gorm:"type:varchar(255);index"`
+	Email          string     `gorm:"type:varchar(255);not null;uniqueIndex"`
+	Name           string     `gorm:"type:varchar(255);not null"`
+	AvatarURL      string     `gorm:"type:varchar(500)"`
+	TotalXP        int        `gorm:"type:int;not null;default:0"`
+	Level          int        `gorm:"type:int;not null;default:1"`
+	Role           string     `gorm:"type:varchar(50);not null;default:'member'"`
+	CreatedAt      time.Time  `gorm:"autoCreateTime"`
+	UpdatedAt      time.Time  `gorm:"autoUpdateTime"`
 }
 
 type TeamModel struct {
@@ -77,14 +82,27 @@ type TagModel struct {
 func (TagModel) TableName() string { return "tags" }
 
 type UserPokemonModel struct {
-	ID           uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
-	UserID       uuid.UUID      `gorm:"type:uuid;not null;index"`
-	BookID       uuid.UUID      `gorm:"type:uuid;not null;index"`
-	PokemonID    int            `gorm:"type:int;not null"`
-	PokemonName  string         `gorm:"type:varchar(100);not null"`
-	PokemonSprite string        `gorm:"type:varchar(500);not null"`
-	PokemonTypes datatypes.JSON `gorm:"type:jsonb"`
-	CaughtAt     time.Time      `gorm:"autoCreateTime"`
+	ID            uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
+	UserID        uuid.UUID      `gorm:"type:uuid;not null;index"`
+	BookID        uuid.UUID      `gorm:"type:uuid;not null;index"`
+	PokemonID     int            `gorm:"type:int;not null"`
+	PokemonName   string         `gorm:"type:varchar(100);not null"`
+	PokemonSprite string         `gorm:"type:varchar(500);not null"`
+	PokemonTypes  datatypes.JSON `gorm:"type:jsonb"`
+	CaughtAt      time.Time      `gorm:"autoCreateTime"`
 }
 
 func (UserPokemonModel) TableName() string { return "user_pokemon" }
+
+type GitHubActivityModel struct {
+	ID        uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
+	UserID    uuid.UUID `gorm:"type:uuid;not null;index"`
+	EventType string    `gorm:"type:varchar(50);not null"`
+	RepoName  string    `gorm:"type:varchar(255);not null"`
+	Title     string    `gorm:"type:varchar(500);not null"`
+	URL       string    `gorm:"type:varchar(500)"`
+	XP        int       `gorm:"type:int;not null;default:0"`
+	CreatedAt time.Time `gorm:"autoCreateTime"`
+}
+
+func (GitHubActivityModel) TableName() string { return "github_activities" }

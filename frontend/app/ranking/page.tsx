@@ -11,7 +11,7 @@ type TeamRanking = {
   team_name: string
   member_count: number
   pokemon_count: number
-  book_count: number
+  total_xp: number
 }
 
 const medals = ['🥇', '🥈', '🥉']
@@ -75,8 +75,8 @@ export default function RankingPage() {
     <>
       <Navbar />
       <main className="max-w-4xl mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">🏆 チームランキング</h1>
-        <p className="text-gray-500 mb-6">チーム対抗！ポケモンゲット数で競おう</p>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">チームランキング</h1>
+        <p className="text-gray-500 mb-6">チーム対抗！XPとポケモン数で競おう</p>
 
         {teams.length === 0 ? (
           <div className="bg-white rounded-xl shadow-sm p-8 text-center">
@@ -105,12 +105,12 @@ export default function RankingPage() {
                   </div>
                   <div className="flex gap-6 items-center">
                     <div className="text-center">
-                      <p className="text-2xl font-bold text-[#DC0A2D]">{team.pokemon_count}</p>
-                      <p className="text-xs text-gray-500">ポケモン</p>
+                      <p className="text-2xl font-bold text-green-600">{team.total_xp.toLocaleString()}</p>
+                      <p className="text-xs text-gray-500">XP</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-2xl font-bold text-green-600">{team.book_count}</p>
-                      <p className="text-xs text-gray-500">冊</p>
+                      <p className="text-2xl font-bold text-[#DC0A2D]">{team.pokemon_count}</p>
+                      <p className="text-xs text-gray-500">ポケモン</p>
                     </div>
                     <button
                       onClick={() => handleJoinTeam(team.team_id)}
@@ -133,13 +133,13 @@ export default function RankingPage() {
               value={newTeamName}
               onChange={e => setNewTeamName(e.target.value)}
               placeholder="チーム名を入力..."
-              className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#DC0A2D] focus:border-transparent"
+              className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent"
               onKeyDown={e => e.key === 'Enter' && handleCreateTeam()}
             />
             <button
               onClick={handleCreateTeam}
               disabled={creating || !newTeamName.trim()}
-              className="bg-[#DC0A2D] hover:bg-red-700 disabled:bg-gray-300 text-white font-medium py-2 px-6 rounded-lg transition-colors"
+              className="bg-gray-900 hover:bg-gray-700 disabled:bg-gray-300 text-white font-medium py-2 px-6 rounded-lg transition-colors"
             >
               {creating ? '作成中...' : 'チーム作成'}
             </button>

@@ -16,7 +16,7 @@ type TeamRankingDTO struct {
 	TeamName     string `json:"team_name"`
 	MemberCount  int    `json:"member_count"`
 	PokemonCount int    `json:"pokemon_count"`
-	BookCount    int    `json:"book_count"`
+	TotalXP      int    `json:"total_xp"`
 }
 
 type GetTeamRankingResult struct {
@@ -24,23 +24,23 @@ type GetTeamRankingResult struct {
 }
 
 type GetTeamRankingHandler struct {
-	teamRepo    repository.TeamRepository
-	userRepo    repository.UserRepository
-	pokemonRepo repository.PokemonRepository
-	bookRepo    repository.BookRepository
+	teamRepo     repository.TeamRepository
+	userRepo     repository.UserRepository
+	pokemonRepo  repository.PokemonRepository
+	activityRepo repository.GitHubActivityRepository
 }
 
 func NewGetTeamRankingHandler(
 	teamRepo repository.TeamRepository,
 	userRepo repository.UserRepository,
 	pokemonRepo repository.PokemonRepository,
-	bookRepo repository.BookRepository,
+	activityRepo repository.GitHubActivityRepository,
 ) *GetTeamRankingHandler {
 	return &GetTeamRankingHandler{
-		teamRepo:    teamRepo,
-		userRepo:    userRepo,
-		pokemonRepo: pokemonRepo,
-		bookRepo:    bookRepo,
+		teamRepo:     teamRepo,
+		userRepo:     userRepo,
+		pokemonRepo:  pokemonRepo,
+		activityRepo: activityRepo,
 	}
 }
 
@@ -62,9 +62,11 @@ func (h *GetTeamRankingHandler) Handle(ctx context.Context, q *GetTeamRankingQue
 
 	// Build team member map
 	teamMembers := make(map[uuid.UUID][]uuid.UUID)
+	teamXP := make(map[uuid.UUID]int)
 	for _, u := range users {
 		if u.TeamID != nil {
 			teamMembers[*u.TeamID] = append(teamMembers[*u.TeamID], u.ID)
+			teamXP[*u.TeamID] += u.TotalXP
 		}
 	}
 
@@ -72,7 +74,6 @@ func (h *GetTeamRankingHandler) Handle(ctx context.Context, q *GetTeamRankingQue
 	for i, team := range teams {
 		memberIDs := teamMembers[team.ID]
 		pokemonCount := 0
-		bookCount := 0
 
 		for _, memberID := range memberIDs {
 			pokemons, err := h.pokemonRepo.FindByUserID(ctx, memberID)
@@ -80,12 +81,6 @@ func (h *GetTeamRankingHandler) Handle(ctx context.Context, q *GetTeamRankingQue
 				return nil, err
 			}
 			pokemonCount += len(pokemons)
-
-			books, _, err := h.bookRepo.FindByUserID(ctx, memberID, "finished", "", 1, 9999)
-			if err != nil {
-				return nil, err
-			}
-			bookCount += len(books)
 		}
 
 		dtos[i] = TeamRankingDTO{
@@ -93,14 +88,14 @@ func (h *GetTeamRankingHandler) Handle(ctx context.Context, q *GetTeamRankingQue
 			TeamName:     team.Name,
 			MemberCount:  len(memberIDs),
 			PokemonCount: pokemonCount,
-			BookCount:    bookCount,
+			TotalXP:      teamXP[team.ID],
 		}
 	}
 
-	// Sort by pokemon count (simple bubble sort, teams are small)
+	// Sort by total XP
 	for i := 0; i < len(dtos); i++ {
 		for j := i + 1; j < len(dtos); j++ {
-			if dtos[j].PokemonCount > dtos[i].PokemonCount {
+			if dtos[j].TotalXP > dtos[i].TotalXP {
 				dtos[i], dtos[j] = dtos[j], dtos[i]
 			}
 		}

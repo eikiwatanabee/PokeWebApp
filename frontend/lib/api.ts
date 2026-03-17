@@ -1,4 +1,4 @@
-import type { AuthTokens, Book, BookListItem, CaughtPokemon, Memo, Pokemon, Tag } from './types'
+import type { AuthTokens, Book, BookListItem, CaughtPokemon, GitHubActivity, Memo, Pokemon, Tag, UserStats } from './types'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
 
@@ -71,8 +71,27 @@ class ApiClient {
     return this.request(`/api/auth/google/callback?code=${code}`)
   }
 
+  async getGitHubAuthURL(): Promise<{ url: string }> {
+    return this.request('/api/auth/github')
+  }
+
+  async githubCallback(code: string): Promise<AuthTokens> {
+    return this.request(`/api/auth/github/callback?code=${code}`)
+  }
+
   async devLogin(): Promise<AuthTokens> {
     return this.request('/api/auth/dev-login', { method: 'POST' })
+  }
+
+  // GitHub Activities
+  async getActivities(limit?: number): Promise<{ activities: GitHubActivity[]; total_count: number }> {
+    const qs = limit ? `?limit=${limit}` : ''
+    return this.request(`/api/activities${qs}`)
+  }
+
+  // User Stats
+  async getStats(): Promise<UserStats> {
+    return this.request('/api/stats')
   }
 
   // Books
@@ -162,7 +181,7 @@ class ApiClient {
     await this.request(`/api/teams/${teamId}/join`, { method: 'POST' })
   }
 
-  async getTeamRanking(): Promise<{ teams: { team_id: string; team_name: string; member_count: number; pokemon_count: number; book_count: number }[] }> {
+  async getTeamRanking(): Promise<{ teams: { team_id: string; team_name: string; member_count: number; pokemon_count: number; total_xp: number }[] }> {
     return this.request('/api/teams/ranking')
   }
 }

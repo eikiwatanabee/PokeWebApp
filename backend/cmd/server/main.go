@@ -42,6 +42,7 @@ func main() {
 		&persistence.MemoModel{},
 		&persistence.TagModel{},
 		&persistence.UserPokemonModel{},
+		&persistence.GitHubActivityModel{},
 	); err != nil {
 		log.Fatalf("failed to migrate: %v", err)
 	}
@@ -55,6 +56,7 @@ func main() {
 	pokemonRepo := persistence.NewGormPokemonRepository(db)
 	tenantRepo := persistence.NewGormTenantRepository(db)
 	teamRepo := persistence.NewGormTeamRepository(db)
+	activityRepo := persistence.NewGormGitHubActivityRepository(db)
 	pokeAPIClient := pokeapi.NewClient()
 
 	// --- Auth ---
@@ -64,6 +66,12 @@ func main() {
 		getEnv("GOOGLE_CLIENT_SECRET", ""),
 		getEnv("GOOGLE_REDIRECT_URL", "http://localhost:8080/api/auth/google/callback"),
 	)
+	githubOAuth := auth.NewGitHubOAuth(
+		getEnv("GITHUB_CLIENT_ID", ""),
+		getEnv("GITHUB_CLIENT_SECRET", ""),
+		getEnv("GITHUB_REDIRECT_URL", "http://localhost:8080/api/auth/github/callback"),
+	)
+	webhookVerifier := auth.NewWebhookVerifier(getEnv("GITHUB_WEBHOOK_SECRET", ""))
 
 	// --- Domain Services ---
 	gachaSvc := service.NewPokemonGachaService(pokeAPIClient)
@@ -79,6 +87,7 @@ func main() {
 	deleteMemoHandler := command.NewDeleteMemoHandler(uow, memoRepo)
 	createTagHandler := command.NewCreateTagHandler(uow, tagRepo)
 	deleteTagHandler := command.NewDeleteTagHandler(uow, tagRepo)
+	processGitHubEventHandler := command.NewProcessGitHubEventHandler(uow, userRepo, activityRepo, pokemonRepo, gachaSvc)
 
 	// --- Query Handlers ---
 	getBooksHandler := query.NewGetBooksHandler(bookRepo)
@@ -86,7 +95,9 @@ func main() {
 	getMemosHandler := query.NewGetMemosHandler(memoRepo)
 	getTagsHandler := query.NewGetTagsHandler(tagRepo)
 	getPokedexHandler := query.NewGetPokedexHandler(pokemonRepo)
-	getTeamRankingHandler := query.NewGetTeamRankingHandler(teamRepo, userRepo, pokemonRepo, bookRepo)
+	getTeamRankingHandler := query.NewGetTeamRankingHandler(teamRepo, userRepo, pokemonRepo, activityRepo)
+	getActivitiesHandler := query.NewGetGitHubActivitiesHandler(activityRepo)
+	getUserStatsHandler := query.NewGetUserStatsHandler(userRepo, activityRepo, pokemonRepo)
 
 	// --- Command Handlers (cont.) ---
 	chooseStarterHandler := command.NewChooseStarterHandler(uow, pokemonRepo, gachaSvc)
@@ -94,7 +105,7 @@ func main() {
 	joinTeamHandler := command.NewJoinTeamHandler(uow, userRepo, teamRepo)
 
 	// --- Presentation Handlers ---
-	authHandler := handler.NewAuthHandler(googleOAuth, jwtManager, userRepo, tenantRepo)
+	authHandler := handler.NewAuthHandler(googleOAuth, githubOAuth, jwtManager, userRepo, tenantRepo)
 	bookHandler := handler.NewBookHandler(
 		registerBookHandler, startReadingHandler, finishReadingHandler,
 		updateBookHandler, deleteBookHandler, getBooksHandler, getBookDetailHandler,
@@ -104,10 +115,12 @@ func main() {
 	pokedexHandler := handler.NewPokedexHandler(getPokedexHandler)
 	starterHandler := handler.NewStarterHandler(chooseStarterHandler, getPokedexHandler)
 	teamHandler := handler.NewTeamHandler(createTeamHandler, joinTeamHandler, getTeamRankingHandler)
+	webhookHandler := handler.NewWebhookHandler(webhookVerifier, processGitHubEventHandler)
+	activityHandler := handler.NewActivityHandler(getActivitiesHandler, getUserStatsHandler)
 
 	// --- Router ---
 	r := gin.Default()
-	router.Setup(r, jwtManager, authHandler, bookHandler, memoHandler, tagHandler, pokedexHandler, starterHandler, teamHandler)
+	router.Setup(r, jwtManager, authHandler, bookHandler, memoHandler, tagHandler, pokedexHandler, starterHandler, teamHandler, webhookHandler, activityHandler)
 
 	// --- Start ---
 	port := getEnv("PORT", "8080")
