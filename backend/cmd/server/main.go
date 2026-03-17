@@ -43,6 +43,7 @@ func main() {
 		&persistence.TagModel{},
 		&persistence.UserPokemonModel{},
 		&persistence.GitHubActivityModel{},
+		&persistence.UserAchievementModel{},
 	); err != nil {
 		log.Fatalf("failed to migrate: %v", err)
 	}
@@ -57,6 +58,7 @@ func main() {
 	tenantRepo := persistence.NewGormTenantRepository(db)
 	teamRepo := persistence.NewGormTeamRepository(db)
 	activityRepo := persistence.NewGormGitHubActivityRepository(db)
+	achievementRepo := persistence.NewGormAchievementRepository(db)
 	pokeAPIClient := pokeapi.NewClient()
 
 	// --- Auth ---
@@ -75,6 +77,7 @@ func main() {
 
 	// --- Domain Services ---
 	gachaSvc := service.NewPokemonGachaService(pokeAPIClient)
+	achievementSvc := service.NewAchievementService(achievementRepo, activityRepo, pokemonRepo)
 
 	// --- Command Handlers ---
 	registerBookHandler := command.NewRegisterBookHandler(uow, bookRepo, tagRepo)
@@ -87,7 +90,7 @@ func main() {
 	deleteMemoHandler := command.NewDeleteMemoHandler(uow, memoRepo)
 	createTagHandler := command.NewCreateTagHandler(uow, tagRepo)
 	deleteTagHandler := command.NewDeleteTagHandler(uow, tagRepo)
-	processGitHubEventHandler := command.NewProcessGitHubEventHandler(uow, userRepo, activityRepo, pokemonRepo, gachaSvc)
+	processGitHubEventHandler := command.NewProcessGitHubEventHandler(uow, userRepo, activityRepo, pokemonRepo, gachaSvc, achievementSvc)
 
 	// --- Query Handlers ---
 	getBooksHandler := query.NewGetBooksHandler(bookRepo)
@@ -97,7 +100,7 @@ func main() {
 	getPokedexHandler := query.NewGetPokedexHandler(pokemonRepo)
 	getTeamRankingHandler := query.NewGetTeamRankingHandler(teamRepo, userRepo, pokemonRepo, activityRepo)
 	getActivitiesHandler := query.NewGetGitHubActivitiesHandler(activityRepo)
-	getUserStatsHandler := query.NewGetUserStatsHandler(userRepo, activityRepo, pokemonRepo)
+	getUserStatsHandler := query.NewGetUserStatsHandler(userRepo, activityRepo, pokemonRepo, achievementRepo)
 
 	// --- Command Handlers (cont.) ---
 	chooseStarterHandler := command.NewChooseStarterHandler(uow, pokemonRepo, gachaSvc)

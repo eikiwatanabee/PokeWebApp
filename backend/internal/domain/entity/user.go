@@ -14,20 +14,23 @@ const (
 )
 
 type User struct {
-	ID             uuid.UUID
-	TenantID       uuid.UUID
-	TeamID         *uuid.UUID
-	GoogleID       string
-	GitHubID       string
-	GitHubUsername  string
-	Email          string
-	Name           string
-	AvatarURL      string
-	TotalXP        int
-	Level          int
-	Role           UserRole
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
+	ID               uuid.UUID
+	TenantID         uuid.UUID
+	TeamID           *uuid.UUID
+	GoogleID         string
+	GitHubID         string
+	GitHubUsername   string
+	Email            string
+	Name             string
+	AvatarURL        string
+	TotalXP          int
+	Level            int
+	CurrentStreak    int
+	MaxStreak        int
+	LastActivityDate *time.Time
+	Role             UserRole
+	CreatedAt        time.Time
+	UpdatedAt        time.Time
 }
 
 func NewUser(tenantID uuid.UUID, googleID, email, name string) (*User, error) {
@@ -109,6 +112,50 @@ func calculateLevel(totalXP int) int {
 		required = 100 + (level-1)*50
 	}
 	return level
+}
+
+// UpdateStreak updates the commit streak based on the current activity date.
+// Returns the streak multiplier for bonus XP.
+func (u *User) UpdateStreak(activityDate time.Time) float64 {
+	today := activityDate.Truncate(24 * time.Hour)
+
+	if u.LastActivityDate != nil {
+		lastDate := u.LastActivityDate.Truncate(24 * time.Hour)
+		if today.Equal(lastDate) {
+			// Same day, no streak change
+			return u.StreakMultiplier()
+		}
+		if today.Equal(lastDate.Add(24 * time.Hour)) {
+			// Consecutive day
+			u.CurrentStreak++
+		} else {
+			// Streak broken
+			u.CurrentStreak = 1
+		}
+	} else {
+		u.CurrentStreak = 1
+	}
+
+	if u.CurrentStreak > u.MaxStreak {
+		u.MaxStreak = u.CurrentStreak
+	}
+	u.LastActivityDate = &today
+	u.UpdatedAt = time.Now()
+	return u.StreakMultiplier()
+}
+
+// StreakMultiplier returns the XP multiplier based on current streak.
+func (u *User) StreakMultiplier() float64 {
+	switch {
+	case u.CurrentStreak >= 100:
+		return 3.0
+	case u.CurrentStreak >= 30:
+		return 2.0
+	case u.CurrentStreak >= 7:
+		return 1.5
+	default:
+		return 1.0
+	}
 }
 
 func (u *User) XPToNextLevel() int {

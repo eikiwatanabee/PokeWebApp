@@ -42,6 +42,15 @@ func (r *GormGitHubActivityRepository) CountByUserID(ctx context.Context, userID
 	return count, nil
 }
 
+func (r *GormGitHubActivityRepository) CountByUserIDAndType(ctx context.Context, userID uuid.UUID, eventType entity.GitHubEventType) (int64, error) {
+	tx := GetTx(ctx, r.db)
+	var count int64
+	if err := tx.Model(&GitHubActivityModel{}).Where("user_id = ? AND event_type = ?", userID, string(eventType)).Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
 func (r *GormGitHubActivityRepository) TotalXPByUserID(ctx context.Context, userID uuid.UUID) (int, error) {
 	tx := GetTx(ctx, r.db)
 	var total *int

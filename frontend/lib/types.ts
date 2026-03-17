@@ -30,12 +30,15 @@ export interface Tag {
   name: string
 }
 
+export type PokemonRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary'
+
 export interface Pokemon {
   id: string
   pokemon_id: number
   pokemon_name: string
   sprite_url: string
   types: string[]
+  rarity: PokemonRarity
   activity_id: string
   caught_at: string
 }
@@ -73,6 +76,14 @@ export interface GitHubActivity {
   created_at: string
 }
 
+export interface Achievement {
+  type: string
+  name: string
+  description: string
+  icon: string
+  unlocked_at: string
+}
+
 export interface UserStats {
   total_xp: number
   level: number
@@ -80,4 +91,8 @@ export interface UserStats {
   total_commits: number
   total_merges: number
   pokemon_count: number
+  current_streak: number
+  max_streak: number
+  streak_multiplier: number
+  achievements: Achievement[]
 }

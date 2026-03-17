@@ -2,11 +2,13 @@ package command
 
 import (
 	"context"
+	"math"
 
 	"github.com/eikiwatanabee/PokeWebApp/backend/internal/application/uow"
 	"github.com/eikiwatanabee/PokeWebApp/backend/internal/domain/entity"
 	"github.com/eikiwatanabee/PokeWebApp/backend/internal/domain/repository"
 	"github.com/eikiwatanabee/PokeWebApp/backend/internal/domain/service"
+	"github.com/eikiwatanabee/PokeWebApp/backend/internal/domain/valueobject"
 )
 
 type ProcessGitHubEventCommand struct {
@@ -17,20 +19,31 @@ type ProcessGitHubEventCommand struct {
 	URL           string
 }
 
+type NewAchievementDTO struct {
+	Type string `json:"type"`
+	Name string `json:"name"`
+	Icon string `json:"icon"`
+}
+
 type ProcessGitHubEventResult struct {
-	XPGained    int    `json:"xp_gained"`
-	TotalXP     int    `json:"total_xp"`
-	Level       int    `json:"level"`
-	PokemonName string `json:"pokemon_name,omitempty"`
-	SpriteURL   string `json:"sprite_url,omitempty"`
+	XPGained        int                `json:"xp_gained"`
+	TotalXP         int                `json:"total_xp"`
+	Level           int                `json:"level"`
+	CurrentStreak   int                `json:"current_streak"`
+	StreakMultiplier float64            `json:"streak_multiplier"`
+	PokemonName     string             `json:"pokemon_name,omitempty"`
+	SpriteURL       string             `json:"sprite_url,omitempty"`
+	PokemonRarity   string             `json:"pokemon_rarity,omitempty"`
+	NewAchievements []NewAchievementDTO `json:"new_achievements,omitempty"`
 }
 
 type ProcessGitHubEventHandler struct {
-	uow          uow.UnitOfWork
-	userRepo     repository.UserRepository
-	activityRepo repository.GitHubActivityRepository
-	pokemonRepo  repository.PokemonRepository
-	gachaSvc     *service.PokemonGachaService
+	uow            uow.UnitOfWork
+	userRepo       repository.UserRepository
+	activityRepo   repository.GitHubActivityRepository
+	pokemonRepo    repository.PokemonRepository
+	gachaSvc       *service.PokemonGachaService
+	achievementSvc *service.AchievementService
 }
 
 func NewProcessGitHubEventHandler(
@@ -39,24 +52,24 @@ func NewProcessGitHubEventHandler(
 	activityRepo repository.GitHubActivityRepository,
 	pokemonRepo repository.PokemonRepository,
 	gachaSvc *service.PokemonGachaService,
+	achievementSvc *service.AchievementService,
 ) *ProcessGitHubEventHandler {
 	return &ProcessGitHubEventHandler{
-		uow:          uow,
-		userRepo:     userRepo,
-		activityRepo: activityRepo,
-		pokemonRepo:  pokemonRepo,
-		gachaSvc:     gachaSvc,
+		uow:            uow,
+		userRepo:       userRepo,
+		activityRepo:   activityRepo,
+		pokemonRepo:    pokemonRepo,
+		gachaSvc:       gachaSvc,
+		achievementSvc: achievementSvc,
 	}
 }
 
 func (h *ProcessGitHubEventHandler) Handle(ctx context.Context, cmd *ProcessGitHubEventCommand) (*ProcessGitHubEventResult, error) {
-	// Look up user by GitHub username
 	user, err := h.userRepo.FindByGitHubUsername(ctx, cmd.GitHubUsername)
 	if err != nil {
 		return nil, err
 	}
 	if user == nil {
-		// User not registered, skip silently
 		return nil, nil
 	}
 
@@ -68,21 +81,32 @@ func (h *ProcessGitHubEventHandler) Handle(ctx context.Context, cmd *ProcessGitH
 			return err
 		}
 
-		// Add XP to user
-		user.AddXP(activity.XP)
+		// Update streak
+		streakMultiplier := user.UpdateStreak(activity.CreatedAt)
+
+		// Apply streak bonus to XP
+		baseXP := activity.XP
+		bonusXP := int(math.Round(float64(baseXP) * (streakMultiplier - 1)))
+		totalXPGained := baseXP + bonusXP
+
+		user.AddXP(totalXPGained)
 		if err := h.userRepo.Save(ctx, user); err != nil {
 			return err
 		}
 
 		result = &ProcessGitHubEventResult{
-			XPGained: activity.XP,
-			TotalXP:  user.TotalXP,
-			Level:    user.Level,
+			XPGained:        totalXPGained,
+			TotalXP:         user.TotalXP,
+			Level:           user.Level,
+			CurrentStreak:   user.CurrentStreak,
+			StreakMultiplier: streakMultiplier,
 		}
 
-		// On PR merge, catch a Pokemon!
+		var caughtRarity valueobject.PokemonRarity
+
+		// On PR merge, catch a Pokemon with rarity boost!
 		if cmd.EventType == entity.EventPRMerge {
-			pokemonInfo, err := h.gachaSvc.Draw(ctx)
+			pokemonInfo, err := h.gachaSvc.DrawWithBoost(ctx, streakMultiplier)
 			if err != nil {
 				return err
 			}
@@ -94,6 +118,30 @@ func (h *ProcessGitHubEventHandler) Handle(ctx context.Context, cmd *ProcessGitH
 
 			result.PokemonName = pokemonInfo.Name
 			result.SpriteURL = pokemonInfo.SpriteURL
+			result.PokemonRarity = string(pokemonInfo.Rarity)
+			caughtRarity = pokemonInfo.Rarity
+		}
+
+		// Check achievements
+		newAchievements, err := h.achievementSvc.CheckAndUnlock(ctx, user, caughtRarity)
+		if err != nil {
+			return err
+		}
+
+		if len(newAchievements) > 0 {
+			defMap := make(map[entity.AchievementType]entity.AchievementDefinition)
+			for _, d := range entity.AchievementDefinitions {
+				defMap[d.Type] = d
+			}
+			for _, a := range newAchievements {
+				if def, ok := defMap[a.AchievementType]; ok {
+					result.NewAchievements = append(result.NewAchievements, NewAchievementDTO{
+						Type: string(a.AchievementType),
+						Name: def.Name,
+						Icon: def.Icon,
+					})
+				}
+			}
 		}
 
 		return nil

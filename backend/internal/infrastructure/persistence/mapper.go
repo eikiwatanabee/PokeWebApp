@@ -31,39 +31,45 @@ func toTenantEntity(m *TenantModel) *entity.Tenant {
 
 func toUserModel(e *entity.User) *UserModel {
 	return &UserModel{
-		ID:             e.ID,
-		TenantID:       e.TenantID,
-		TeamID:         e.TeamID,
-		GoogleID:       e.GoogleID,
-		GitHubID:       e.GitHubID,
-		GitHubUsername: e.GitHubUsername,
-		Email:          e.Email,
-		Name:           e.Name,
-		AvatarURL:      e.AvatarURL,
-		TotalXP:        e.TotalXP,
-		Level:          e.Level,
-		Role:           string(e.Role),
-		CreatedAt:      e.CreatedAt,
-		UpdatedAt:      e.UpdatedAt,
+		ID:               e.ID,
+		TenantID:         e.TenantID,
+		TeamID:           e.TeamID,
+		GoogleID:         e.GoogleID,
+		GitHubID:         e.GitHubID,
+		GitHubUsername:   e.GitHubUsername,
+		Email:            e.Email,
+		Name:             e.Name,
+		AvatarURL:        e.AvatarURL,
+		TotalXP:          e.TotalXP,
+		Level:            e.Level,
+		CurrentStreak:    e.CurrentStreak,
+		MaxStreak:        e.MaxStreak,
+		LastActivityDate: e.LastActivityDate,
+		Role:             string(e.Role),
+		CreatedAt:        e.CreatedAt,
+		UpdatedAt:        e.UpdatedAt,
 	}
 }
 
 func toUserEntity(m *UserModel) *entity.User {
 	return &entity.User{
-		ID:             m.ID,
-		TenantID:       m.TenantID,
-		TeamID:         m.TeamID,
-		GoogleID:       m.GoogleID,
-		GitHubID:       m.GitHubID,
-		GitHubUsername: m.GitHubUsername,
-		Email:          m.Email,
-		Name:           m.Name,
-		AvatarURL:      m.AvatarURL,
-		TotalXP:        m.TotalXP,
-		Level:          m.Level,
-		Role:           entity.UserRole(m.Role),
-		CreatedAt:      m.CreatedAt,
-		UpdatedAt:      m.UpdatedAt,
+		ID:               m.ID,
+		TenantID:         m.TenantID,
+		TeamID:           m.TeamID,
+		GoogleID:         m.GoogleID,
+		GitHubID:         m.GitHubID,
+		GitHubUsername:   m.GitHubUsername,
+		Email:            m.Email,
+		Name:             m.Name,
+		AvatarURL:        m.AvatarURL,
+		TotalXP:          m.TotalXP,
+		Level:            m.Level,
+		CurrentStreak:    m.CurrentStreak,
+		MaxStreak:        m.MaxStreak,
+		LastActivityDate: m.LastActivityDate,
+		Role:             entity.UserRole(m.Role),
+		CreatedAt:        m.CreatedAt,
+		UpdatedAt:        m.UpdatedAt,
 	}
 }
 
@@ -151,6 +157,10 @@ func toTagEntity(m *TagModel) *entity.Tag {
 
 func toUserPokemonModel(e *entity.UserPokemon) *UserPokemonModel {
 	typesJSON, _ := json.Marshal(e.Pokemon.Types)
+	rarity := string(e.Pokemon.Rarity)
+	if rarity == "" {
+		rarity = "common"
+	}
 	return &UserPokemonModel{
 		ID:            e.ID,
 		UserID:        e.UserID,
@@ -159,6 +169,7 @@ func toUserPokemonModel(e *entity.UserPokemon) *UserPokemonModel {
 		PokemonName:   e.Pokemon.Name,
 		PokemonSprite: e.Pokemon.SpriteURL,
 		PokemonTypes:  typesJSON,
+		PokemonRarity: rarity,
 		CaughtAt:      e.CaughtAt,
 	}
 }
@@ -166,6 +177,10 @@ func toUserPokemonModel(e *entity.UserPokemon) *UserPokemonModel {
 func toUserPokemonEntity(m *UserPokemonModel) *entity.UserPokemon {
 	var types []string
 	_ = json.Unmarshal(m.PokemonTypes, &types)
+	rarity := valueobject.PokemonRarity(m.PokemonRarity)
+	if rarity == "" {
+		rarity = valueobject.RarityCommon
+	}
 	return &entity.UserPokemon{
 		ID:         m.ID,
 		UserID:     m.UserID,
@@ -176,8 +191,29 @@ func toUserPokemonEntity(m *UserPokemonModel) *entity.UserPokemon {
 			Name:      m.PokemonName,
 			SpriteURL: m.PokemonSprite,
 			Types:     types,
+			Rarity:    rarity,
 		},
 		CaughtAt: m.CaughtAt,
+	}
+}
+
+// --- UserAchievement ---
+
+func toUserAchievementModel(e *entity.UserAchievement) *UserAchievementModel {
+	return &UserAchievementModel{
+		ID:              e.ID,
+		UserID:          e.UserID,
+		AchievementType: string(e.AchievementType),
+		UnlockedAt:      e.UnlockedAt,
+	}
+}
+
+func toUserAchievementEntity(m *UserAchievementModel) *entity.UserAchievement {
+	return &entity.UserAchievement{
+		ID:              m.ID,
+		UserID:          m.UserID,
+		AchievementType: entity.AchievementType(m.AchievementType),
+		UnlockedAt:      m.UnlockedAt,
 	}
 }
 
