@@ -44,7 +44,8 @@ const (
 	AchievementPokemon25    AchievementType = "pokemon_25"
 	AchievementPokemon50    AchievementType = "pokemon_50"
 	AchievementPokemon100   AchievementType = "pokemon_100"
-	AchievementPokemon151   AchievementType = "pokemon_151"
+	AchievementPokemon200   AchievementType = "pokemon_200"
+	AchievementPokemon500   AchievementType = "pokemon_500"
 
 	// --- レアリティ系 ---
 	AchievementRareCatch    AchievementType = "rare_catch"
@@ -118,7 +119,8 @@ var AchievementDefinitions = []AchievementDefinition{
 	{AchievementPokemon25, "ポケモンずき", "ポケモン25匹ゲット", "💕", "pokemon"},
 	{AchievementPokemon50, "ずかんコレクター", "ポケモン50匹ゲット", "📚", "pokemon"},
 	{AchievementPokemon100, "ずかんかんせい", "ポケモン100匹ゲット", "🏆", "pokemon"},
-	{AchievementPokemon151, "カントーマスター", "ポケモン151匹ゲット", "🗾", "pokemon"},
+	{AchievementPokemon200, "ポケモンはかせ", "ポケモン200匹ゲット", "🔬", "pokemon"},
+	{AchievementPokemon500, "ポケモンマニア", "ポケモン500匹ゲット", "🗾", "pokemon"},
 
 	// レアリティ
 	{AchievementRareCatch, "レアハンター", "Rareポケモンゲット", "🟦", "rarity"},

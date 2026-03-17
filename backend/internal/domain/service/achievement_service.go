@@ -193,9 +193,13 @@ func (s *AchievementService) CheckAndUnlock(ctx context.Context, user *entity.Us
 			c, err := getPokemonCount()
 			return c >= 100, err
 		}},
-		{entity.AchievementPokemon151, func() (bool, error) {
+		{entity.AchievementPokemon200, func() (bool, error) {
 			c, err := getPokemonCount()
-			return c >= 151, err
+			return c >= 200, err
+		}},
+		{entity.AchievementPokemon500, func() (bool, error) {
+			c, err := getPokemonCount()
+			return c >= 500, err
 		}},
 
 		// --- レアリティ系 ---
