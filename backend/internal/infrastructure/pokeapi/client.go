@@ -15,9 +15,9 @@ import (
 )
 
 const (
-	baseURL     = "https://pokeapi.co/api/v2"
-	maxPokemon  = 898 // Gen 1-8
-	httpTimeout = 10 * time.Second
+	baseURL            = "https://pokeapi.co/api/v2"
+	defaultMaxPokemon  = 898 // Gen 1-8
+	httpTimeout        = 10 * time.Second
 )
 
 type pokeAPIResponse struct {
@@ -50,17 +50,26 @@ type cachedSpecies struct {
 // Client implements domain.service.PokemonFetcher.
 type Client struct {
 	httpClient   *http.Client
+	maxPokemon   int
 	speciesCache sync.Map // map[int]*cachedSpecies
 }
 
 func NewClient() *Client {
+	return NewClientWithMax(defaultMaxPokemon)
+}
+
+func NewClientWithMax(maxPokemon int) *Client {
+	if maxPokemon <= 0 {
+		maxPokemon = defaultMaxPokemon
+	}
 	return &Client{
 		httpClient: &http.Client{Timeout: httpTimeout},
+		maxPokemon: maxPokemon,
 	}
 }
 
 func (c *Client) FetchRandom(ctx context.Context) (*valueobject.PokemonInfo, error) {
-	id := rand.Intn(maxPokemon) + 1
+	id := rand.Intn(c.maxPokemon) + 1
 	return c.FetchByID(ctx, id)
 }
 

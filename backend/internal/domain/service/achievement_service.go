@@ -27,274 +27,218 @@ func NewAchievementService(
 	}
 }
 
+// achievementCheck pairs an achievement type with its unlock condition.
+type achievementCheck struct {
+	achievementType entity.AchievementType
+	condition       func() (bool, error)
+}
+
+// thresholdChecks generates checks for a series of thresholds against a lazy-loaded counter.
+func thresholdChecks(pairs []struct {
+	t         entity.AchievementType
+	threshold int64
+}, getter func() (int64, error)) []achievementCheck {
+	checks := make([]achievementCheck, len(pairs))
+	for i, p := range pairs {
+		threshold := p.threshold
+		checks[i] = achievementCheck{p.t, func() (bool, error) {
+			v, err := getter()
+			return v >= threshold, err
+		}}
+	}
+	return checks
+}
+
+// intThresholdChecks is like thresholdChecks but for int getters (e.g. pokemon count).
+func intThresholdChecks(pairs []struct {
+	t         entity.AchievementType
+	threshold int
+}, getter func() (int, error)) []achievementCheck {
+	checks := make([]achievementCheck, len(pairs))
+	for i, p := range pairs {
+		threshold := p.threshold
+		checks[i] = achievementCheck{p.t, func() (bool, error) {
+			v, err := getter()
+			return v >= threshold, err
+		}}
+	}
+	return checks
+}
+
+// valueChecks generates checks that compare a user field against thresholds (no DB call).
+func valueChecks(pairs []struct {
+	t         entity.AchievementType
+	threshold int
+}, value int) []achievementCheck {
+	checks := make([]achievementCheck, len(pairs))
+	for i, p := range pairs {
+		met := value >= p.threshold
+		checks[i] = achievementCheck{p.t, func() (bool, error) { return met, nil }}
+	}
+	return checks
+}
+
 // CheckAndUnlock checks all achievement conditions and unlocks any newly earned ones.
 func (s *AchievementService) CheckAndUnlock(ctx context.Context, user *entity.User, caughtRarity valueobject.PokemonRarity) ([]*entity.UserAchievement, error) {
-	var newAchievements []*entity.UserAchievement
+	counters := newLazyCounters(ctx, user.ID, s.activityRepo, s.pokemonRepo)
+	checks := s.buildChecks(user, caughtRarity, counters)
+	return s.evaluateAndUnlock(ctx, user.ID, checks)
+}
 
-	// Lazy-load counters only when needed
-	var (
-		commitCount  *int64
-		mergeCount   *int64
-		reviewCount  *int64
-		issueCount   *int64
-		pokemonCount *int
-	)
+// buildChecks assembles all achievement checks organized by category.
+func (s *AchievementService) buildChecks(user *entity.User, caughtRarity valueobject.PokemonRarity, c *lazyCounters) []achievementCheck {
+	var all []achievementCheck
 
-	getCommitCount := func() (int64, error) {
-		if commitCount == nil {
-			c, err := s.activityRepo.CountByUserID(ctx, user.ID)
-			if err != nil {
-				return 0, err
-			}
-			commitCount = &c
-		}
-		return *commitCount, nil
-	}
-	getMergeCount := func() (int64, error) {
-		if mergeCount == nil {
-			c, err := s.activityRepo.CountByUserIDAndType(ctx, user.ID, entity.EventPRMerge)
-			if err != nil {
-				return 0, err
-			}
-			mergeCount = &c
-		}
-		return *mergeCount, nil
-	}
-	getReviewCount := func() (int64, error) {
-		if reviewCount == nil {
-			c, err := s.activityRepo.CountByUserIDAndType(ctx, user.ID, entity.EventReview)
-			if err != nil {
-				return 0, err
-			}
-			reviewCount = &c
-		}
-		return *reviewCount, nil
-	}
-	getIssueCount := func() (int64, error) {
-		if issueCount == nil {
-			c, err := s.activityRepo.CountByUserIDAndType(ctx, user.ID, entity.EventIssueClose)
-			if err != nil {
-				return 0, err
-			}
-			issueCount = &c
-		}
-		return *issueCount, nil
-	}
-	getPokemonCount := func() (int, error) {
-		if pokemonCount == nil {
-			p, err := s.pokemonRepo.FindByUserID(ctx, user.ID)
-			if err != nil {
-				return 0, err
-			}
-			c := len(p)
-			pokemonCount = &c
-		}
-		return *pokemonCount, nil
-	}
-
-	checks := []struct {
-		achievementType entity.AchievementType
-		condition       func() (bool, error)
+	// コミット系
+	all = append(all, thresholdChecks([]struct {
+		t         entity.AchievementType
+		threshold int64
 	}{
-		// --- コミット系 ---
-		{entity.AchievementFirstCommit, func() (bool, error) {
-			c, err := getCommitCount()
-			return c >= 1, err
-		}},
-		{entity.AchievementCommit50, func() (bool, error) {
-			c, err := getCommitCount()
-			return c >= 50, err
-		}},
-		{entity.AchievementCommit100, func() (bool, error) {
-			c, err := getCommitCount()
-			return c >= 100, err
-		}},
-		{entity.AchievementCommit500, func() (bool, error) {
-			c, err := getCommitCount()
-			return c >= 500, err
-		}},
-		{entity.AchievementCommit1000, func() (bool, error) {
-			c, err := getCommitCount()
-			return c >= 1000, err
-		}},
+		{entity.AchievementFirstCommit, 1},
+		{entity.AchievementCommit50, 50},
+		{entity.AchievementCommit100, 100},
+		{entity.AchievementCommit500, 500},
+		{entity.AchievementCommit1000, 1000},
+	}, c.commits)...)
 
-		// --- ストリーク系 ---
-		{entity.AchievementStreak3, func() (bool, error) {
-			return user.CurrentStreak >= 3, nil
-		}},
-		{entity.AchievementStreak7, func() (bool, error) {
-			return user.CurrentStreak >= 7, nil
-		}},
-		{entity.AchievementStreak14, func() (bool, error) {
-			return user.CurrentStreak >= 14, nil
-		}},
-		{entity.AchievementStreak30, func() (bool, error) {
-			return user.CurrentStreak >= 30, nil
-		}},
-		{entity.AchievementStreak60, func() (bool, error) {
-			return user.CurrentStreak >= 60, nil
-		}},
-		{entity.AchievementStreak100, func() (bool, error) {
-			return user.CurrentStreak >= 100, nil
-		}},
-		{entity.AchievementStreak365, func() (bool, error) {
-			return user.CurrentStreak >= 365, nil
-		}},
+	// ストリーク系
+	all = append(all, valueChecks([]struct {
+		t         entity.AchievementType
+		threshold int
+	}{
+		{entity.AchievementStreak3, 3},
+		{entity.AchievementStreak7, 7},
+		{entity.AchievementStreak14, 14},
+		{entity.AchievementStreak30, 30},
+		{entity.AchievementStreak60, 60},
+		{entity.AchievementStreak100, 100},
+		{entity.AchievementStreak365, 365},
+	}, user.CurrentStreak)...)
 
-		// --- レベル系 ---
-		{entity.AchievementLevel5, func() (bool, error) {
-			return user.Level >= 5, nil
-		}},
-		{entity.AchievementLevel10, func() (bool, error) {
-			return user.Level >= 10, nil
-		}},
-		{entity.AchievementLevel25, func() (bool, error) {
-			return user.Level >= 25, nil
-		}},
-		{entity.AchievementLevel50, func() (bool, error) {
-			return user.Level >= 50, nil
-		}},
-		{entity.AchievementLevel100, func() (bool, error) {
-			return user.Level >= 100, nil
-		}},
+	// レベル系
+	all = append(all, valueChecks([]struct {
+		t         entity.AchievementType
+		threshold int
+	}{
+		{entity.AchievementLevel5, 5},
+		{entity.AchievementLevel10, 10},
+		{entity.AchievementLevel25, 25},
+		{entity.AchievementLevel50, 50},
+		{entity.AchievementLevel100, 100},
+	}, user.Level)...)
 
-		// --- XP系 ---
-		{entity.AchievementXP1000, func() (bool, error) {
-			return user.TotalXP >= 1000, nil
-		}},
-		{entity.AchievementXP5000, func() (bool, error) {
-			return user.TotalXP >= 5000, nil
-		}},
-		{entity.AchievementXP10000, func() (bool, error) {
-			return user.TotalXP >= 10000, nil
-		}},
-		{entity.AchievementXP50000, func() (bool, error) {
-			return user.TotalXP >= 50000, nil
-		}},
+	// XP系
+	all = append(all, valueChecks([]struct {
+		t         entity.AchievementType
+		threshold int
+	}{
+		{entity.AchievementXP1000, 1000},
+		{entity.AchievementXP5000, 5000},
+		{entity.AchievementXP10000, 10000},
+		{entity.AchievementXP50000, 50000},
+	}, user.TotalXP)...)
 
-		// --- ポケモン系 ---
-		{entity.AchievementPokemon1, func() (bool, error) {
-			c, err := getPokemonCount()
-			return c >= 1, err
-		}},
-		{entity.AchievementPokemon10, func() (bool, error) {
-			c, err := getPokemonCount()
-			return c >= 10, err
-		}},
-		{entity.AchievementPokemon25, func() (bool, error) {
-			c, err := getPokemonCount()
-			return c >= 25, err
-		}},
-		{entity.AchievementPokemon50, func() (bool, error) {
-			c, err := getPokemonCount()
-			return c >= 50, err
-		}},
-		{entity.AchievementPokemon100, func() (bool, error) {
-			c, err := getPokemonCount()
-			return c >= 100, err
-		}},
-		{entity.AchievementPokemon200, func() (bool, error) {
-			c, err := getPokemonCount()
-			return c >= 200, err
-		}},
-		{entity.AchievementPokemon500, func() (bool, error) {
-			c, err := getPokemonCount()
-			return c >= 500, err
-		}},
+	// ポケモン系
+	all = append(all, intThresholdChecks([]struct {
+		t         entity.AchievementType
+		threshold int
+	}{
+		{entity.AchievementPokemon1, 1},
+		{entity.AchievementPokemon10, 10},
+		{entity.AchievementPokemon25, 25},
+		{entity.AchievementPokemon50, 50},
+		{entity.AchievementPokemon100, 100},
+		{entity.AchievementPokemon200, 200},
+		{entity.AchievementPokemon500, 500},
+	}, c.pokemon)...)
 
-		// --- レアリティ系 ---
+	// レアリティ系
+	all = append(all, s.rarityChecks(caughtRarity)...)
+
+	// PR系
+	all = append(all, thresholdChecks([]struct {
+		t         entity.AchievementType
+		threshold int64
+	}{
+		{entity.AchievementFirstMerge, 1},
+		{entity.AchievementMerge10, 10},
+		{entity.AchievementMerge25, 25},
+		{entity.AchievementMerge50, 50},
+		{entity.AchievementMerge100, 100},
+	}, c.merges)...)
+
+	// レビュー系
+	all = append(all, thresholdChecks([]struct {
+		t         entity.AchievementType
+		threshold int64
+	}{
+		{entity.AchievementFirstReview, 1},
+		{entity.AchievementReview10, 10},
+		{entity.AchievementReview25, 25},
+		{entity.AchievementReview50, 50},
+		{entity.AchievementReview100, 100},
+	}, c.reviews)...)
+
+	// Issue系
+	all = append(all, thresholdChecks([]struct {
+		t         entity.AchievementType
+		threshold int64
+	}{
+		{entity.AchievementFirstIssue, 1},
+		{entity.AchievementIssue10, 10},
+		{entity.AchievementIssue50, 50},
+	}, c.issues)...)
+
+	// 特殊系
+	all = append(all, s.specialChecks(c)...)
+
+	return all
+}
+
+func (s *AchievementService) rarityChecks(rarity valueobject.PokemonRarity) []achievementCheck {
+	return []achievementCheck{
 		{entity.AchievementRareCatch, func() (bool, error) {
-			return caughtRarity == valueobject.RarityRare, nil
+			return rarity == valueobject.RarityRare, nil
 		}},
 		{entity.AchievementEpicCatch, func() (bool, error) {
-			return caughtRarity == valueobject.RarityEpic, nil
+			return rarity == valueobject.RarityEpic, nil
 		}},
 		{entity.AchievementLegendary, func() (bool, error) {
-			return caughtRarity == valueobject.RarityLegendary, nil
+			return rarity == valueobject.RarityLegendary, nil
 		}},
+	}
+}
 
-		// --- PR系 ---
-		{entity.AchievementFirstMerge, func() (bool, error) {
-			c, err := getMergeCount()
-			return c >= 1, err
-		}},
-		{entity.AchievementMerge10, func() (bool, error) {
-			c, err := getMergeCount()
-			return c >= 10, err
-		}},
-		{entity.AchievementMerge25, func() (bool, error) {
-			c, err := getMergeCount()
-			return c >= 25, err
-		}},
-		{entity.AchievementMerge50, func() (bool, error) {
-			c, err := getMergeCount()
-			return c >= 50, err
-		}},
-		{entity.AchievementMerge100, func() (bool, error) {
-			c, err := getMergeCount()
-			return c >= 100, err
-		}},
-
-		// --- レビュー系 ---
-		{entity.AchievementFirstReview, func() (bool, error) {
-			c, err := getReviewCount()
-			return c >= 1, err
-		}},
-		{entity.AchievementReview10, func() (bool, error) {
-			c, err := getReviewCount()
-			return c >= 10, err
-		}},
-		{entity.AchievementReview25, func() (bool, error) {
-			c, err := getReviewCount()
-			return c >= 25, err
-		}},
-		{entity.AchievementReview50, func() (bool, error) {
-			c, err := getReviewCount()
-			return c >= 50, err
-		}},
-		{entity.AchievementReview100, func() (bool, error) {
-			c, err := getReviewCount()
-			return c >= 100, err
-		}},
-
-		// --- Issue系 ---
-		{entity.AchievementFirstIssue, func() (bool, error) {
-			c, err := getIssueCount()
-			return c >= 1, err
-		}},
-		{entity.AchievementIssue10, func() (bool, error) {
-			c, err := getIssueCount()
-			return c >= 10, err
-		}},
-		{entity.AchievementIssue50, func() (bool, error) {
-			c, err := getIssueCount()
-			return c >= 50, err
-		}},
-
-		// --- 特殊系 ---
+func (s *AchievementService) specialChecks(c *lazyCounters) []achievementCheck {
+	return []achievementCheck{
 		{entity.AchievementAllRounder, func() (bool, error) {
-			commits, err := getCommitCount()
+			commits, err := c.commits()
 			if err != nil || commits < 1 {
 				return false, err
 			}
-			merges, err := getMergeCount()
+			merges, err := c.merges()
 			if err != nil || merges < 1 {
 				return false, err
 			}
-			reviews, err := getReviewCount()
+			reviews, err := c.reviews()
 			if err != nil || reviews < 1 {
 				return false, err
 			}
-			issues, err := getIssueCount()
+			issues, err := c.issues()
 			if err != nil || issues < 1 {
 				return false, err
 			}
 			return true, nil
 		}},
 	}
+}
+
+// evaluateAndUnlock iterates checks, skips already-unlocked, and saves new achievements.
+func (s *AchievementService) evaluateAndUnlock(ctx context.Context, userID uuid.UUID, checks []achievementCheck) ([]*entity.UserAchievement, error) {
+	var newAchievements []*entity.UserAchievement
 
 	for _, check := range checks {
-		has, err := s.achievementRepo.HasAchievement(ctx, user.ID, check.achievementType)
+		has, err := s.achievementRepo.HasAchievement(ctx, userID, check.achievementType)
 		if err != nil {
 			return nil, err
 		}
@@ -310,7 +254,7 @@ func (s *AchievementService) CheckAndUnlock(ctx context.Context, user *entity.Us
 			continue
 		}
 
-		achievement := entity.NewUserAchievement(user.ID, check.achievementType)
+		achievement := entity.NewUserAchievement(userID, check.achievementType)
 		if err := s.achievementRepo.Save(ctx, achievement); err != nil {
 			return nil, err
 		}
@@ -320,10 +264,81 @@ func (s *AchievementService) CheckAndUnlock(ctx context.Context, user *entity.Us
 	return newAchievements, nil
 }
 
-func (s *AchievementService) checkPokemonCount(ctx context.Context, userID uuid.UUID, required int) (bool, error) {
-	pokemon, err := s.pokemonRepo.FindByUserID(ctx, userID)
-	if err != nil {
-		return false, err
+// lazyCounters caches DB queries so each counter is fetched at most once.
+type lazyCounters struct {
+	ctx         context.Context
+	userID      uuid.UUID
+	activityRepo repository.GitHubActivityRepository
+	pokemonRepo  repository.PokemonRepository
+
+	commitCount  *int64
+	mergeCount   *int64
+	reviewCount  *int64
+	issueCount   *int64
+	pokemonCount *int
+}
+
+func newLazyCounters(ctx context.Context, userID uuid.UUID, activityRepo repository.GitHubActivityRepository, pokemonRepo repository.PokemonRepository) *lazyCounters {
+	return &lazyCounters{
+		ctx:          ctx,
+		userID:       userID,
+		activityRepo: activityRepo,
+		pokemonRepo:  pokemonRepo,
 	}
-	return len(pokemon) >= required, nil
+}
+
+func (lc *lazyCounters) commits() (int64, error) {
+	if lc.commitCount == nil {
+		c, err := lc.activityRepo.CountByUserID(lc.ctx, lc.userID)
+		if err != nil {
+			return 0, err
+		}
+		lc.commitCount = &c
+	}
+	return *lc.commitCount, nil
+}
+
+func (lc *lazyCounters) merges() (int64, error) {
+	if lc.mergeCount == nil {
+		c, err := lc.activityRepo.CountByUserIDAndType(lc.ctx, lc.userID, entity.EventPRMerge)
+		if err != nil {
+			return 0, err
+		}
+		lc.mergeCount = &c
+	}
+	return *lc.mergeCount, nil
+}
+
+func (lc *lazyCounters) reviews() (int64, error) {
+	if lc.reviewCount == nil {
+		c, err := lc.activityRepo.CountByUserIDAndType(lc.ctx, lc.userID, entity.EventReview)
+		if err != nil {
+			return 0, err
+		}
+		lc.reviewCount = &c
+	}
+	return *lc.reviewCount, nil
+}
+
+func (lc *lazyCounters) issues() (int64, error) {
+	if lc.issueCount == nil {
+		c, err := lc.activityRepo.CountByUserIDAndType(lc.ctx, lc.userID, entity.EventIssueClose)
+		if err != nil {
+			return 0, err
+		}
+		lc.issueCount = &c
+	}
+	return *lc.issueCount, nil
+}
+
+func (lc *lazyCounters) pokemon() (int, error) {
+	if lc.pokemonCount == nil {
+		p, err := lc.pokemonRepo.FindByUserID(lc.ctx, lc.userID)
+		if err != nil {
+			return 0, err
+		}
+		c := len(p)
+		lc.pokemonCount = &c
+	}
+	return *lc.pokemonCount, nil
 }

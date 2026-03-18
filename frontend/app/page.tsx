@@ -3,64 +3,12 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Navbar } from '@/components/Navbar'
+import { PokemonCollection } from '@/components/PokemonCollection'
+import { ActivityFeed } from '@/components/ActivityFeed'
+import { AchievementSection } from '@/components/AchievementSection'
 import { api } from '@/lib/api'
 import { isLoggedIn, getUser } from '@/lib/auth'
-import type { Pokemon, GitHubActivity, UserStats, PokemonRarity, Achievement } from '@/lib/types'
-
-const eventIcons: Record<string, string> = {
-  commit: '💻',
-  pr_merge: '🎉',
-  pr_open: '📝',
-  issue_close: '✅',
-  review: '👀',
-}
-
-const rarityColors: Record<PokemonRarity, string> = {
-  common: 'border-gray-300 bg-gray-50',
-  uncommon: 'border-green-400 bg-green-50',
-  rare: 'border-blue-400 bg-blue-50',
-  epic: 'border-purple-400 bg-purple-50',
-  legendary: 'border-yellow-400 bg-yellow-50',
-}
-
-const rarityLabels: Record<PokemonRarity, string> = {
-  common: 'Common',
-  uncommon: 'Uncommon',
-  rare: 'Rare',
-  epic: 'Epic',
-  legendary: 'Legendary',
-}
-
-const rarityBadgeColors: Record<PokemonRarity, string> = {
-  common: 'bg-gray-200 text-gray-700',
-  uncommon: 'bg-green-200 text-green-800',
-  rare: 'bg-blue-200 text-blue-800',
-  epic: 'bg-purple-200 text-purple-800',
-  legendary: 'bg-yellow-200 text-yellow-800',
-}
-
-const categoryLabels: Record<string, string> = {
-  commit: '💻 コミット',
-  streak: '🔥 ストリーク',
-  level: '⬆️ レベル',
-  xp: '✨ 経験値',
-  pokemon: '⚡ ポケモン',
-  rarity: '💎 レアリティ',
-  pr: '🔀 プルリクエスト',
-  review: '👀 レビュー',
-  issue: '🐛 Issue',
-  special: '🎯 スペシャル',
-}
-
-function groupAchievementsByCategory(achievements: Achievement[]): Record<string, Achievement[]> {
-  const groups: Record<string, Achievement[]> = {}
-  for (const a of achievements) {
-    const cat = a.category || 'other'
-    if (!groups[cat]) groups[cat] = []
-    groups[cat].push(a)
-  }
-  return groups
-}
+import type { Pokemon, GitHubActivity, UserStats } from '@/lib/types'
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -151,119 +99,11 @@ export default function DashboardPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Pokemon Collection with Rarity */}
-          <div className="bg-white rounded-xl shadow-sm p-6 border-2 border-[#DC0A2D]/10">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-xl">⚡</span>
-              <h2 className="text-lg font-bold">ゲットしたポケモン</h2>
-            </div>
-            <div className="flex items-baseline gap-2">
-              <p className="text-4xl font-bold text-[#DC0A2D]">{pokemon.length}</p>
-              <p className="text-gray-500 text-sm">匹</p>
-            </div>
-            {pokemon.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-4">
-                {pokemon.slice(0, 12).map(p => (
-                  <div
-                    key={p.id}
-                    className={`relative rounded-lg border-2 ${rarityColors[p.rarity || 'common']} p-0.5`}
-                    title={`${p.pokemon_name} (${rarityLabels[p.rarity || 'common']})`}
-                  >
-                    <img src={p.sprite_url} alt={p.pokemon_name} className="w-12 h-12 pixelated" />
-                    {(p.rarity === 'epic' || p.rarity === 'legendary') && (
-                      <span className="absolute -top-1 -right-1 text-xs">
-                        {p.rarity === 'legendary' ? '🌟' : '💎'}
-                      </span>
-                    )}
-                  </div>
-                ))}
-                {pokemon.length > 12 && (
-                  <button
-                    onClick={() => router.push('/pokedex')}
-                    className="w-14 h-14 flex items-center justify-center text-sm text-[#DC0A2D] font-bold hover:bg-red-50 rounded-lg transition-colors border-2 border-dashed border-red-200"
-                  >
-                    +{pokemon.length - 12}
-                  </button>
-                )}
-              </div>
-            )}
-            {pokemon.length === 0 && (
-              <p className="text-gray-400 text-sm mt-3">PRをマージするとポケモンをゲットできるよ！</p>
-            )}
-            {/* Rarity Legend */}
-            <div className="flex flex-wrap gap-2 mt-4 pt-3 border-t border-gray-100">
-              {(['common', 'uncommon', 'rare', 'epic', 'legendary'] as PokemonRarity[]).map(r => (
-                <span key={r} className={`text-xs px-2 py-0.5 rounded-full ${rarityBadgeColors[r]}`}>
-                  {rarityLabels[r]}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* Recent Activity */}
-          <div className="bg-white rounded-xl shadow-sm p-6 border-2 border-green-100">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <span className="text-xl">📊</span>
-                <h2 className="text-lg font-bold">最近のアクティビティ</h2>
-              </div>
-              <button
-                onClick={() => router.push('/activities')}
-                className="text-xs text-green-600 hover:underline"
-              >
-                すべて見る →
-              </button>
-            </div>
-            {activities.length === 0 ? (
-              <div className="text-center py-4">
-                <p className="text-gray-400">まだアクティビティがありません</p>
-                <p className="text-sm text-gray-400 mt-1">GitHubにコミットして経験値をゲットしよう！</p>
-              </div>
-            ) : (
-              <ul className="space-y-2">
-                {activities.slice(0, 5).map(a => (
-                  <li key={a.id} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-green-50 transition-colors">
-                    <span className="text-lg">{eventIcons[a.event_type] || '📌'}</span>
-                    <div className="min-w-0 flex-1">
-                      <span className="font-medium block truncate text-sm">{a.title}</span>
-                      <span className="text-xs text-gray-400">{a.repo_name}</span>
-                    </div>
-                    <span className="text-xs font-bold text-green-600 whitespace-nowrap">+{a.xp} XP</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+          <PokemonCollection pokemon={pokemon} />
+          <ActivityFeed activities={activities} />
         </div>
 
-        {/* Achievements Section */}
-        {stats && stats.achievements && stats.achievements.length > 0 && (
-          <div className="mt-6 bg-white rounded-xl shadow-sm p-6 border-2 border-yellow-100">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-xl">🏅</span>
-              <h2 className="text-lg font-bold">アチーブメント</h2>
-              <span className="text-sm text-gray-400 ml-auto">{stats.achievements.length}個 達成</span>
-            </div>
-            {Object.entries(groupAchievementsByCategory(stats.achievements)).map(([category, achievements]) => (
-              <div key={category} className="mb-4 last:mb-0">
-                <p className="text-xs font-bold text-gray-500 uppercase mb-2">{categoryLabels[category] || category}</p>
-                <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
-                  {achievements.map(a => (
-                    <div
-                      key={a.type}
-                      className="flex flex-col items-center p-2.5 bg-gradient-to-b from-yellow-50 to-white rounded-xl border border-yellow-200 hover:shadow-md transition-shadow"
-                      title={a.description}
-                    >
-                      <span className="text-2xl mb-0.5">{a.icon}</span>
-                      <span className="text-[11px] font-bold text-center leading-tight">{a.name}</span>
-                      <span className="text-[9px] text-gray-400 text-center mt-0.5">{a.description}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        <AchievementSection achievements={stats?.achievements ?? []} />
 
         {/* How it works */}
         <div className="mt-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-6 border border-gray-200">
