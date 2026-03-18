@@ -21,6 +21,10 @@ func Setup(
 	activityHandler *handler.ActivityHandler,
 	dailyMissionHandler *handler.DailyMissionHandler,
 	rankingHandler *handler.RankingHandler,
+	feedHandler *handler.FeedHandler,
+	weeklyEventHandler *handler.WeeklyEventHandler,
+	limitedEventHandler *handler.LimitedEventHandler,
+	tradeHandler *handler.TradeHandler,
 ) {
 	// CORS
 	r.Use(func(c *gin.Context) {
@@ -131,5 +135,24 @@ func Setup(
 		protected.GET("/ranking/users", rankingHandler.GetUserRanking)
 		protected.GET("/trainers/:id", rankingHandler.GetTrainerCard)
 		protected.GET("/trainers/me", rankingHandler.GetTrainerCard)
+
+		// Team Feed
+		protected.GET("/feed", feedHandler.GetTeamFeed)
+
+		// Weekly Event
+		protected.GET("/events/weekly", weeklyEventHandler.GetCurrentEvent)
+
+		// Limited Events
+		protected.GET("/events/limited", limitedEventHandler.GetActiveEvents)
+		protected.POST("/events/limited", limitedEventHandler.CreateEvent) // TODO: restrict to admin
+
+		// Trades
+		trades := protected.Group("/trades")
+		{
+			trades.GET("", tradeHandler.GetTrades)
+			trades.POST("", tradeHandler.CreateTrade)
+			trades.POST("/:id/accept", tradeHandler.AcceptTrade)
+			trades.POST("/:id/cancel", tradeHandler.CancelTrade)
+		}
 	}
 }

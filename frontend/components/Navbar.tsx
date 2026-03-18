@@ -8,8 +8,8 @@ const navItems = [
   { href: '/', label: 'ホーム', icon: '🏠' },
   { href: '/activities', label: 'アクティビティ', icon: '⚡' },
   { href: '/pokedex', label: '図鑑', icon: '📖' },
+  { href: '/trades', label: '交換', icon: '🔄' },
   { href: '/ranking', label: 'ランキング', icon: '🏆' },
-  { href: '/settings', label: '設定', icon: '⚙️' },
 ]
 
 export function Navbar() {

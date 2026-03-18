@@ -7,6 +7,7 @@ import { PokemonCollection } from '@/components/PokemonCollection'
 import { ActivityFeed } from '@/components/ActivityFeed'
 import { AchievementSection } from '@/components/AchievementSection'
 import { DailyMissions } from '@/components/DailyMissions'
+import { LimitedEvents } from '@/components/LimitedEvents'
 import { api } from '@/lib/api'
 import { isLoggedIn, getUser } from '@/lib/auth'
 import type { Pokemon, GitHubActivity, UserStats } from '@/lib/types'
@@ -99,6 +100,7 @@ export default function DashboardPage() {
           <StatCard label="レベル" value={stats?.level ?? 1} icon="🌟" color="bg-gradient-to-br from-green-400 to-green-600" />
         </div>
 
+        <LimitedEvents />
         <DailyMissions />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">

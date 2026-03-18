@@ -299,6 +299,92 @@ func toDailyMissionEntity(m *DailyMissionModel) *entity.DailyMission {
 	}
 }
 
+// --- WeeklyEvent ---
+
+func toWeeklyEventModel(e *entity.WeeklyEvent) *WeeklyEventModel {
+	return &WeeklyEventModel{
+		ID:        e.ID,
+		TenantID:  e.TenantID,
+		EventType: string(e.EventType),
+		WeekStart: e.WeekStart,
+		WeekEnd:   e.WeekEnd,
+		CreatedAt: e.CreatedAt,
+	}
+}
+
+func toWeeklyEventEntity(m *WeeklyEventModel) *entity.WeeklyEvent {
+	return &entity.WeeklyEvent{
+		ID:        m.ID,
+		TenantID:  m.TenantID,
+		EventType: entity.WeeklyEventType(m.EventType),
+		WeekStart: m.WeekStart,
+		WeekEnd:   m.WeekEnd,
+		CreatedAt: m.CreatedAt,
+	}
+}
+
+// --- Trade ---
+
+func toTradeModel(e *entity.Trade) *TradeModel {
+	return &TradeModel{
+		ID:                   e.ID,
+		TenantID:             e.TenantID,
+		OffererID:            e.OffererID,
+		OfferedPokemonID:     e.OfferedPokemonID,
+		RequestedPokemonName: e.RequestedPokemonName,
+		AccepterID:           e.AccepterID,
+		AcceptedPokemonID:    e.AcceptedPokemonID,
+		Status:               string(e.Status),
+		CreatedAt:            e.CreatedAt,
+		UpdatedAt:            e.UpdatedAt,
+	}
+}
+
+func toTradeEntity(m *TradeModel) *entity.Trade {
+	return &entity.Trade{
+		ID:                   m.ID,
+		TenantID:             m.TenantID,
+		OffererID:            m.OffererID,
+		OfferedPokemonID:     m.OfferedPokemonID,
+		RequestedPokemonName: m.RequestedPokemonName,
+		AccepterID:           m.AccepterID,
+		AcceptedPokemonID:    m.AcceptedPokemonID,
+		Status:               entity.TradeStatus(m.Status),
+		CreatedAt:            m.CreatedAt,
+		UpdatedAt:            m.UpdatedAt,
+	}
+}
+
+// --- LimitedEvent ---
+
+func toLimitedEventModel(e *entity.LimitedEvent) *LimitedEventModel {
+	return &LimitedEventModel{
+		ID:          e.ID,
+		TenantID:    e.TenantID,
+		Title:       e.Title,
+		Description: e.Description,
+		Icon:        e.Icon,
+		RarityBoost: e.RarityBoost,
+		StartsAt:    e.StartsAt,
+		EndsAt:      e.EndsAt,
+		CreatedAt:   e.CreatedAt,
+	}
+}
+
+func toLimitedEventEntity(m *LimitedEventModel) *entity.LimitedEvent {
+	return &entity.LimitedEvent{
+		ID:          m.ID,
+		TenantID:    m.TenantID,
+		Title:       m.Title,
+		Description: m.Description,
+		Icon:        m.Icon,
+		RarityBoost: m.RarityBoost,
+		StartsAt:    m.StartsAt,
+		EndsAt:      m.EndsAt,
+		CreatedAt:   m.CreatedAt,
+	}
+}
+
 // --- LoginBonus ---
 
 func toLoginBonusModel(e *entity.LoginBonus) *LoginBonusModel {

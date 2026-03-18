@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Navbar } from '@/components/Navbar'
 import { api } from '@/lib/api'
 import { isLoggedIn } from '@/lib/auth'
+import { WeeklyEventCard } from '@/components/WeeklyEvent'
 import type { UserRank } from '@/lib/types'
 
 type TeamRanking = {
@@ -201,6 +202,8 @@ export default function RankingPage() {
         {/* Team Rankings Tab */}
         {tab === 'teams' && (
           <>
+            <WeeklyEventCard />
+
             {loading ? (
               <p className="text-gray-400 text-center py-12">読み込み中...</p>
             ) : teams.length === 0 ? (

@@ -39,13 +39,14 @@ type ProcessGitHubEventResult struct {
 }
 
 type ProcessGitHubEventHandler struct {
-	uow            uow.UnitOfWork
-	userRepo       repository.UserRepository
-	activityRepo   repository.GitHubActivityRepository
-	pokemonRepo    repository.PokemonRepository
-	gachaSvc       *service.PokemonGachaService
-	achievementSvc *service.AchievementService
-	missionSvc     *service.DailyMissionService
+	uow              uow.UnitOfWork
+	userRepo         repository.UserRepository
+	activityRepo     repository.GitHubActivityRepository
+	pokemonRepo      repository.PokemonRepository
+	limitedEventRepo repository.LimitedEventRepository
+	gachaSvc         *service.PokemonGachaService
+	achievementSvc   *service.AchievementService
+	missionSvc       *service.DailyMissionService
 }
 
 func NewProcessGitHubEventHandler(
@@ -56,15 +57,17 @@ func NewProcessGitHubEventHandler(
 	gachaSvc *service.PokemonGachaService,
 	achievementSvc *service.AchievementService,
 	missionSvc *service.DailyMissionService,
+	limitedEventRepo repository.LimitedEventRepository,
 ) *ProcessGitHubEventHandler {
 	return &ProcessGitHubEventHandler{
-		uow:            uow,
-		userRepo:       userRepo,
-		activityRepo:   activityRepo,
-		pokemonRepo:    pokemonRepo,
-		gachaSvc:       gachaSvc,
-		achievementSvc: achievementSvc,
-		missionSvc:     missionSvc,
+		uow:              uow,
+		userRepo:         userRepo,
+		activityRepo:     activityRepo,
+		pokemonRepo:      pokemonRepo,
+		limitedEventRepo: limitedEventRepo,
+		gachaSvc:         gachaSvc,
+		achievementSvc:   achievementSvc,
+		missionSvc:       missionSvc,
 	}
 }
 
@@ -110,7 +113,18 @@ func (h *ProcessGitHubEventHandler) Handle(ctx context.Context, cmd *ProcessGitH
 
 		// On PR merge, catch a Pokemon with rarity boost!
 		if cmd.EventType == entity.EventPRMerge {
-			pokemonInfo, err := h.gachaSvc.DrawWithBoost(ctx, streakMultiplier)
+			// Apply limited event boost on top of streak multiplier
+			effectiveMultiplier := streakMultiplier
+			if h.limitedEventRepo != nil {
+				activeEvents, err := h.limitedEventRepo.FindActiveByTenantID(ctx, user.TenantID)
+				if err == nil {
+					for _, ev := range activeEvents {
+						effectiveMultiplier *= ev.RarityBoost
+					}
+				}
+			}
+
+			pokemonInfo, err := h.gachaSvc.DrawWithBoost(ctx, effectiveMultiplier)
 			if err != nil {
 				return err
 			}

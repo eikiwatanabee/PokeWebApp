@@ -142,6 +142,76 @@ export interface UserRankingResult {
   sort_by: string
 }
 
+export interface FeedItem {
+  id: string
+  user_id: string
+  user_name: string
+  user_avatar_url: string
+  github_username: string
+  event_type: 'commit' | 'pr_merge' | 'pr_open' | 'issue_close' | 'review'
+  repo_name: string
+  title: string
+  url: string
+  xp: number
+  created_at: string
+}
+
+export interface TeamFeedResult {
+  items: FeedItem[]
+  total_count: number
+}
+
+export interface WeeklyEventTeamScore {
+  team_id: string
+  team_name: string
+  score: number
+  rank: number
+}
+
+export interface WeeklyEvent {
+  event_type: string
+  title: string
+  description: string
+  icon: string
+  week_start: string
+  week_end: string
+  team_scores: WeeklyEventTeamScore[]
+}
+
+export interface LimitedEvent {
+  id: string
+  title: string
+  description: string
+  icon: string
+  rarity_boost: number
+  starts_at: string
+  ends_at: string
+  active: boolean
+  hours_left: number
+}
+
+export interface LimitedEventsResult {
+  events: LimitedEvent[]
+}
+
+export interface Trade {
+  id: string
+  offerer_id: string
+  offerer_name: string
+  offerer_avatar_url: string
+  offered_pokemon_id: string
+  offered_pokemon_name: string
+  offered_pokemon_sprite: string
+  offered_pokemon_rarity: string
+  requested_pokemon_name: string
+  status: 'open' | 'accepted' | 'cancelled'
+  created_at: string
+}
+
+export interface TradesResult {
+  trades: Trade[]
+}
+
 export interface TrainerCard {
   user_id: string
   name: string

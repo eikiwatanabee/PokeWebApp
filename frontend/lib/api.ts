@@ -1,4 +1,4 @@
-import type { AuthTokens, Book, BookListItem, CaughtPokemon, DailyMissionsResult, GitHubActivity, LoginBonusResult, Memo, Pokemon, Tag, TrainerCard, UserRankingResult, UserStats } from './types'
+import type { AuthTokens, Book, BookListItem, CaughtPokemon, DailyMissionsResult, GitHubActivity, LimitedEventsResult, LoginBonusResult, Memo, Pokemon, Tag, TeamFeedResult, TradesResult, TrainerCard, UserRankingResult, UserStats, WeeklyEvent } from './types'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
 
@@ -199,6 +199,45 @@ class ApiClient {
   async getUserRanking(sortBy?: string): Promise<UserRankingResult> {
     const qs = sortBy ? `?sort_by=${sortBy}` : ''
     return this.request(`/api/ranking/users${qs}`)
+  }
+
+  // Team Feed
+  async getTeamFeed(limit?: number): Promise<TeamFeedResult> {
+    const qs = limit ? `?limit=${limit}` : ''
+    return this.request(`/api/feed${qs}`)
+  }
+
+  // Limited Events
+  async getLimitedEvents(): Promise<LimitedEventsResult> {
+    return this.request('/api/events/limited')
+  }
+
+  // Weekly Event
+  async getWeeklyEvent(): Promise<WeeklyEvent> {
+    return this.request('/api/events/weekly')
+  }
+
+  // Trades
+  async getTrades(): Promise<TradesResult> {
+    return this.request('/api/trades')
+  }
+
+  async createTrade(offeredPokemonId: string, requestedPokemonName?: string): Promise<{ trade_id: string }> {
+    return this.request('/api/trades', {
+      method: 'POST',
+      body: JSON.stringify({ offered_pokemon_id: offeredPokemonId, requested_pokemon_name: requestedPokemonName || '' }),
+    })
+  }
+
+  async acceptTrade(tradeId: string, offeredPokemonId: string): Promise<void> {
+    await this.request(`/api/trades/${tradeId}/accept`, {
+      method: 'POST',
+      body: JSON.stringify({ offered_pokemon_id: offeredPokemonId }),
+    })
+  }
+
+  async cancelTrade(tradeId: string): Promise<void> {
+    await this.request(`/api/trades/${tradeId}/cancel`, { method: 'POST' })
   }
 
   // Trainer Card

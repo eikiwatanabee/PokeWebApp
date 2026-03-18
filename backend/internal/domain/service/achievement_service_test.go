@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/eikiwatanabee/PokeWebApp/backend/internal/domain/entity"
 	"github.com/eikiwatanabee/PokeWebApp/backend/internal/domain/valueobject"
@@ -62,6 +63,22 @@ func (m *mockActivityRepo) CountByUserIDAndType(_ context.Context, _ uuid.UUID, 
 }
 
 func (m *mockActivityRepo) TotalXPByUserID(_ context.Context, _ uuid.UUID) (int, error) {
+	return 0, nil
+}
+
+func (m *mockActivityRepo) FindRecentByTenantID(_ context.Context, _ uuid.UUID, _ int) ([]*entity.GitHubActivity, error) {
+	return nil, nil
+}
+
+func (m *mockActivityRepo) CountByUserIDSince(_ context.Context, _ uuid.UUID, _ time.Time) (int64, error) {
+	return 0, nil
+}
+
+func (m *mockActivityRepo) CountByUserIDAndTypeSince(_ context.Context, _ uuid.UUID, _ entity.GitHubEventType, _ time.Time) (int64, error) {
+	return 0, nil
+}
+
+func (m *mockActivityRepo) TotalXPByUserIDSince(_ context.Context, _ uuid.UUID, _ time.Time) (int, error) {
 	return 0, nil
 }
 

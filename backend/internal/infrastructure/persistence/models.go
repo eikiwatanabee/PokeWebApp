@@ -145,3 +145,43 @@ type LoginBonusModel struct {
 }
 
 func (LoginBonusModel) TableName() string { return "login_bonuses" }
+
+type WeeklyEventModel struct {
+	ID        uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
+	TenantID  uuid.UUID `gorm:"type:uuid;not null;index:idx_weekly_event_tenant_week"`
+	EventType string    `gorm:"type:varchar(50);not null"`
+	WeekStart time.Time `gorm:"type:date;not null;index:idx_weekly_event_tenant_week"`
+	WeekEnd   time.Time `gorm:"type:date;not null"`
+	CreatedAt time.Time `gorm:"autoCreateTime"`
+}
+
+func (WeeklyEventModel) TableName() string { return "weekly_events" }
+
+type LimitedEventModel struct {
+	ID          uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
+	TenantID    uuid.UUID `gorm:"type:uuid;not null;index"`
+	Title       string    `gorm:"type:varchar(255);not null"`
+	Description string    `gorm:"type:varchar(500)"`
+	Icon        string    `gorm:"type:varchar(10)"`
+	RarityBoost float64   `gorm:"type:float;not null;default:1.0"`
+	StartsAt    time.Time `gorm:"type:timestamp;not null"`
+	EndsAt      time.Time `gorm:"type:timestamp;not null"`
+	CreatedAt   time.Time `gorm:"autoCreateTime"`
+}
+
+func (LimitedEventModel) TableName() string { return "limited_events" }
+
+type TradeModel struct {
+	ID                   uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
+	TenantID             uuid.UUID  `gorm:"type:uuid;not null;index"`
+	OffererID            uuid.UUID  `gorm:"type:uuid;not null;index"`
+	OfferedPokemonID     uuid.UUID  `gorm:"type:uuid;not null"`
+	RequestedPokemonName string     `gorm:"type:varchar(100)"`
+	AccepterID           *uuid.UUID `gorm:"type:uuid"`
+	AcceptedPokemonID    *uuid.UUID `gorm:"type:uuid"`
+	Status               string     `gorm:"type:varchar(20);not null;default:'open';index"`
+	CreatedAt            time.Time  `gorm:"autoCreateTime"`
+	UpdatedAt            time.Time  `gorm:"autoUpdateTime"`
+}
+
+func (TradeModel) TableName() string { return "trades" }

@@ -46,6 +46,9 @@ func main() {
 		&persistence.UserAchievementModel{},
 		&persistence.DailyMissionModel{},
 		&persistence.LoginBonusModel{},
+		&persistence.WeeklyEventModel{},
+		&persistence.LimitedEventModel{},
+		&persistence.TradeModel{},
 	); err != nil {
 		log.Fatalf("failed to migrate: %v", err)
 	}
@@ -63,6 +66,9 @@ func main() {
 	achievementRepo := persistence.NewGormAchievementRepository(db)
 	dailyMissionRepo := persistence.NewGormDailyMissionRepository(db)
 	loginBonusRepo := persistence.NewGormLoginBonusRepository(db)
+	weeklyEventRepo := persistence.NewGormWeeklyEventRepository(db)
+	limitedEventRepo := persistence.NewGormLimitedEventRepository(db)
+	tradeRepo := persistence.NewGormTradeRepository(db)
 	pokeAPIClient := pokeapi.NewClient()
 
 	// --- Auth ---
@@ -95,7 +101,7 @@ func main() {
 	deleteMemoHandler := command.NewDeleteMemoHandler(uow, memoRepo)
 	createTagHandler := command.NewCreateTagHandler(uow, tagRepo)
 	deleteTagHandler := command.NewDeleteTagHandler(uow, tagRepo)
-	processGitHubEventHandler := command.NewProcessGitHubEventHandler(uow, userRepo, activityRepo, pokemonRepo, gachaSvc, achievementSvc, missionSvc)
+	processGitHubEventHandler := command.NewProcessGitHubEventHandler(uow, userRepo, activityRepo, pokemonRepo, gachaSvc, achievementSvc, missionSvc, limitedEventRepo)
 
 	// --- Query Handlers ---
 	getBooksHandler := query.NewGetBooksHandler(bookRepo)
@@ -109,6 +115,14 @@ func main() {
 	getUserStatsHandler := query.NewGetUserStatsHandler(userRepo, activityRepo, pokemonRepo, achievementRepo)
 	getUserRankingHandler := query.NewGetUserRankingHandler(userRepo, pokemonRepo)
 	getTrainerCardHandler := query.NewGetTrainerCardHandler(userRepo, pokemonRepo, achievementRepo)
+	getTeamFeedHandler := query.NewGetTeamFeedHandler(activityRepo, userRepo)
+	getWeeklyEventHandler := query.NewGetWeeklyEventHandler(weeklyEventRepo, teamRepo, userRepo, activityRepo)
+	getLimitedEventsHandler := query.NewGetLimitedEventsHandler(limitedEventRepo)
+	createLimitedEventHandler := command.NewCreateLimitedEventHandler(limitedEventRepo)
+	createTradeHandler := command.NewCreateTradeHandler(uow, tradeRepo, pokemonRepo)
+	acceptTradeHandler := command.NewAcceptTradeHandler(uow, tradeRepo, pokemonRepo)
+	cancelTradeHandler := command.NewCancelTradeHandler(tradeRepo)
+	getTradesHandler := query.NewGetTradesHandler(tradeRepo, pokemonRepo, userRepo)
 
 	// --- Command Handlers (cont.) ---
 	claimLoginBonusHandler := command.NewClaimLoginBonusHandler(userRepo, loginBonusRepo)
@@ -131,10 +145,14 @@ func main() {
 	activityHandler := handler.NewActivityHandler(getActivitiesHandler, getUserStatsHandler)
 	dailyMissionHandler := handler.NewDailyMissionHandler(getDailyMissionsHandler, claimLoginBonusHandler)
 	rankingHandler := handler.NewRankingHandler(getUserRankingHandler, getTrainerCardHandler)
+	feedHandler := handler.NewFeedHandler(getTeamFeedHandler)
+	weeklyEventHandler := handler.NewWeeklyEventHandler(getWeeklyEventHandler)
+	limitedEventHandler := handler.NewLimitedEventHandler(getLimitedEventsHandler, createLimitedEventHandler)
+	tradeHandler := handler.NewTradeHandler(createTradeHandler, acceptTradeHandler, cancelTradeHandler, getTradesHandler)
 
 	// --- Router ---
 	r := gin.Default()
-	router.Setup(r, jwtManager, authHandler, bookHandler, memoHandler, tagHandler, pokedexHandler, starterHandler, teamHandler, webhookHandler, activityHandler, dailyMissionHandler, rankingHandler)
+	router.Setup(r, jwtManager, authHandler, bookHandler, memoHandler, tagHandler, pokedexHandler, starterHandler, teamHandler, webhookHandler, activityHandler, dailyMissionHandler, rankingHandler, feedHandler, weeklyEventHandler, limitedEventHandler, tradeHandler)
 
 	// --- Start ---
 	port := getEnv("PORT", "8080")
