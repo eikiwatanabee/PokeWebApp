@@ -123,3 +123,36 @@ export interface LoginBonusResult {
   consecutive_days: number
   already_claimed: boolean
 }
+
+export interface UserRank {
+  user_id: string
+  name: string
+  avatar_url: string
+  github_username: string
+  level: number
+  total_xp: number
+  pokemon_count: number
+  current_streak: number
+  max_streak: number
+  rank: number
+}
+
+export interface UserRankingResult {
+  rankings: UserRank[]
+  sort_by: string
+}
+
+export interface TrainerCard {
+  user_id: string
+  name: string
+  avatar_url: string
+  github_username: string
+  level: number
+  total_xp: number
+  current_streak: number
+  max_streak: number
+  pokemon_count: number
+  featured_pokemon: { pokemon_name: string; sprite_url: string; rarity: string }[]
+  achievements: { name: string; icon: string }[]
+  achievement_count: number
+}

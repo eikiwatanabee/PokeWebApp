@@ -1,4 +1,4 @@
-import type { AuthTokens, Book, BookListItem, CaughtPokemon, DailyMissionsResult, GitHubActivity, LoginBonusResult, Memo, Pokemon, Tag, UserStats } from './types'
+import type { AuthTokens, Book, BookListItem, CaughtPokemon, DailyMissionsResult, GitHubActivity, LoginBonusResult, Memo, Pokemon, Tag, TrainerCard, UserRankingResult, UserStats } from './types'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
 
@@ -193,6 +193,18 @@ class ApiClient {
   // Login Bonus
   async claimLoginBonus(): Promise<LoginBonusResult> {
     return this.request('/api/daily/login-bonus', { method: 'POST' })
+  }
+
+  // User Ranking
+  async getUserRanking(sortBy?: string): Promise<UserRankingResult> {
+    const qs = sortBy ? `?sort_by=${sortBy}` : ''
+    return this.request(`/api/ranking/users${qs}`)
+  }
+
+  // Trainer Card
+  async getTrainerCard(userId?: string): Promise<TrainerCard> {
+    const id = userId || 'me'
+    return this.request(`/api/trainers/${id}`)
   }
 }
 

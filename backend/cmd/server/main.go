@@ -107,6 +107,8 @@ func main() {
 	getActivitiesHandler := query.NewGetGitHubActivitiesHandler(activityRepo)
 	getDailyMissionsHandler := query.NewGetDailyMissionsHandler(missionSvc)
 	getUserStatsHandler := query.NewGetUserStatsHandler(userRepo, activityRepo, pokemonRepo, achievementRepo)
+	getUserRankingHandler := query.NewGetUserRankingHandler(userRepo, pokemonRepo)
+	getTrainerCardHandler := query.NewGetTrainerCardHandler(userRepo, pokemonRepo, achievementRepo)
 
 	// --- Command Handlers (cont.) ---
 	claimLoginBonusHandler := command.NewClaimLoginBonusHandler(userRepo, loginBonusRepo)
@@ -128,10 +130,11 @@ func main() {
 	webhookHandler := handler.NewWebhookHandler(webhookVerifier, processGitHubEventHandler)
 	activityHandler := handler.NewActivityHandler(getActivitiesHandler, getUserStatsHandler)
 	dailyMissionHandler := handler.NewDailyMissionHandler(getDailyMissionsHandler, claimLoginBonusHandler)
+	rankingHandler := handler.NewRankingHandler(getUserRankingHandler, getTrainerCardHandler)
 
 	// --- Router ---
 	r := gin.Default()
-	router.Setup(r, jwtManager, authHandler, bookHandler, memoHandler, tagHandler, pokedexHandler, starterHandler, teamHandler, webhookHandler, activityHandler, dailyMissionHandler)
+	router.Setup(r, jwtManager, authHandler, bookHandler, memoHandler, tagHandler, pokedexHandler, starterHandler, teamHandler, webhookHandler, activityHandler, dailyMissionHandler, rankingHandler)
 
 	// --- Start ---
 	port := getEnv("PORT", "8080")
