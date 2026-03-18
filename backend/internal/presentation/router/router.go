@@ -19,6 +19,7 @@ func Setup(
 	teamHandler *handler.TeamHandler,
 	webhookHandler *handler.WebhookHandler,
 	activityHandler *handler.ActivityHandler,
+	dailyMissionHandler *handler.DailyMissionHandler,
 ) {
 	// CORS
 	r.Use(func(c *gin.Context) {
@@ -116,6 +117,13 @@ func Setup(
 			teams.POST("", teamHandler.CreateTeam)
 			teams.POST("/:id/join", teamHandler.JoinTeam)
 			teams.GET("/ranking", teamHandler.GetRanking)
+		}
+
+		// Daily Missions & Login Bonus
+		daily := protected.Group("/daily")
+		{
+			daily.GET("/missions", dailyMissionHandler.GetMissions)
+			daily.POST("/login-bonus", dailyMissionHandler.ClaimLoginBonus)
 		}
 	}
 }

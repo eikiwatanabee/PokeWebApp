@@ -97,3 +97,29 @@ export interface UserStats {
   streak_multiplier: number
   achievements: Achievement[]
 }
+
+export interface DailyMission {
+  id: string
+  template_id: string
+  title: string
+  description: string
+  icon: string
+  progress: number
+  required: number
+  bonus_xp: number
+  status: 'pending' | 'completed'
+}
+
+export interface DailyMissionsResult {
+  missions: DailyMission[]
+  all_completed: boolean
+  completion_bonus: number
+  date: string
+}
+
+export interface LoginBonusResult {
+  claimed: boolean
+  bonus_xp: number
+  consecutive_days: number
+  already_claimed: boolean
+}

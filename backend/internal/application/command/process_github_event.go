@@ -27,6 +27,7 @@ type NewAchievementDTO struct {
 
 type ProcessGitHubEventResult struct {
 	XPGained        int                `json:"xp_gained"`
+	MissionBonusXP  int                `json:"mission_bonus_xp,omitempty"`
 	TotalXP         int                `json:"total_xp"`
 	Level           int                `json:"level"`
 	CurrentStreak   int                `json:"current_streak"`
@@ -44,6 +45,7 @@ type ProcessGitHubEventHandler struct {
 	pokemonRepo    repository.PokemonRepository
 	gachaSvc       *service.PokemonGachaService
 	achievementSvc *service.AchievementService
+	missionSvc     *service.DailyMissionService
 }
 
 func NewProcessGitHubEventHandler(
@@ -53,6 +55,7 @@ func NewProcessGitHubEventHandler(
 	pokemonRepo repository.PokemonRepository,
 	gachaSvc *service.PokemonGachaService,
 	achievementSvc *service.AchievementService,
+	missionSvc *service.DailyMissionService,
 ) *ProcessGitHubEventHandler {
 	return &ProcessGitHubEventHandler{
 		uow:            uow,
@@ -61,6 +64,7 @@ func NewProcessGitHubEventHandler(
 		pokemonRepo:    pokemonRepo,
 		gachaSvc:       gachaSvc,
 		achievementSvc: achievementSvc,
+		missionSvc:     missionSvc,
 	}
 }
 
@@ -141,6 +145,23 @@ func (h *ProcessGitHubEventHandler) Handle(ctx context.Context, cmd *ProcessGitH
 						Icon: def.Icon,
 					})
 				}
+			}
+		}
+
+		// Process daily missions
+		if h.missionSvc != nil {
+			missionBonus, err := h.missionSvc.ProcessActivity(ctx, user.ID, cmd.EventType)
+			if err != nil {
+				return err
+			}
+			if missionBonus > 0 {
+				user.AddXP(missionBonus)
+				if err := h.userRepo.Save(ctx, user); err != nil {
+					return err
+				}
+				result.MissionBonusXP = missionBonus
+				result.TotalXP = user.TotalXP
+				result.Level = user.Level
 			}
 		}
 

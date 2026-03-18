@@ -1,4 +1,4 @@
-import type { AuthTokens, Book, BookListItem, CaughtPokemon, GitHubActivity, Memo, Pokemon, Tag, UserStats } from './types'
+import type { AuthTokens, Book, BookListItem, CaughtPokemon, DailyMissionsResult, GitHubActivity, LoginBonusResult, Memo, Pokemon, Tag, UserStats } from './types'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
 
@@ -183,6 +183,16 @@ class ApiClient {
 
   async getTeamRanking(): Promise<{ teams: { team_id: string; team_name: string; member_count: number; pokemon_count: number; total_xp: number }[] }> {
     return this.request('/api/teams/ranking')
+  }
+
+  // Daily Missions
+  async getDailyMissions(): Promise<DailyMissionsResult> {
+    return this.request('/api/daily/missions')
+  }
+
+  // Login Bonus
+  async claimLoginBonus(): Promise<LoginBonusResult> {
+    return this.request('/api/daily/login-bonus', { method: 'POST' })
   }
 }
 

@@ -119,3 +119,29 @@ type UserAchievementModel struct {
 }
 
 func (UserAchievementModel) TableName() string { return "user_achievements" }
+
+type DailyMissionModel struct {
+	ID         uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
+	UserID     uuid.UUID `gorm:"type:uuid;not null;index:idx_daily_mission_user_date"`
+	Date       time.Time `gorm:"type:date;not null;index:idx_daily_mission_user_date"`
+	TemplateID string    `gorm:"type:varchar(50);not null"`
+	Progress   int       `gorm:"type:int;not null;default:0"`
+	Required   int       `gorm:"type:int;not null"`
+	BonusXP    int       `gorm:"type:int;not null"`
+	Status     string    `gorm:"type:varchar(20);not null;default:'pending'"`
+	CreatedAt  time.Time `gorm:"autoCreateTime"`
+	UpdatedAt  time.Time `gorm:"autoUpdateTime"`
+}
+
+func (DailyMissionModel) TableName() string { return "daily_missions" }
+
+type LoginBonusModel struct {
+	ID              uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
+	UserID          uuid.UUID `gorm:"type:uuid;not null;index:idx_login_bonus_user_date"`
+	Date            time.Time `gorm:"type:date;not null;index:idx_login_bonus_user_date"`
+	BonusXP         int       `gorm:"type:int;not null"`
+	ConsecutiveDays int       `gorm:"type:int;not null;default:1"`
+	CreatedAt       time.Time `gorm:"autoCreateTime"`
+}
+
+func (LoginBonusModel) TableName() string { return "login_bonuses" }

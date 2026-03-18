@@ -266,3 +266,59 @@ func toGitHubActivityEntity(m *GitHubActivityModel) *entity.GitHubActivity {
 		CreatedAt: m.CreatedAt,
 	}
 }
+
+// --- DailyMission ---
+
+func toDailyMissionModel(e *entity.DailyMission) *DailyMissionModel {
+	return &DailyMissionModel{
+		ID:         e.ID,
+		UserID:     e.UserID,
+		Date:       e.Date,
+		TemplateID: e.TemplateID,
+		Progress:   e.Progress,
+		Required:   e.Required,
+		BonusXP:    e.BonusXP,
+		Status:     string(e.Status),
+		CreatedAt:  e.CreatedAt,
+		UpdatedAt:  e.UpdatedAt,
+	}
+}
+
+func toDailyMissionEntity(m *DailyMissionModel) *entity.DailyMission {
+	return &entity.DailyMission{
+		ID:         m.ID,
+		UserID:     m.UserID,
+		Date:       m.Date,
+		TemplateID: m.TemplateID,
+		Progress:   m.Progress,
+		Required:   m.Required,
+		BonusXP:    m.BonusXP,
+		Status:     entity.MissionStatus(m.Status),
+		CreatedAt:  m.CreatedAt,
+		UpdatedAt:  m.UpdatedAt,
+	}
+}
+
+// --- LoginBonus ---
+
+func toLoginBonusModel(e *entity.LoginBonus) *LoginBonusModel {
+	return &LoginBonusModel{
+		ID:              e.ID,
+		UserID:          e.UserID,
+		Date:            e.Date,
+		BonusXP:         e.BonusXP,
+		ConsecutiveDays: e.ConsecutiveDays,
+		CreatedAt:       e.CreatedAt,
+	}
+}
+
+func toLoginBonusEntity(m *LoginBonusModel) *entity.LoginBonus {
+	return &entity.LoginBonus{
+		ID:              m.ID,
+		UserID:          m.UserID,
+		Date:            m.Date,
+		BonusXP:         m.BonusXP,
+		ConsecutiveDays: m.ConsecutiveDays,
+		CreatedAt:       m.CreatedAt,
+	}
+}
