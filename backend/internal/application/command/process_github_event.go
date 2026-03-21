@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"math"
-	"time"
 
 	"github.com/eikiwatanabee/PokeWebApp/backend/internal/application/uow"
 	"github.com/eikiwatanabee/PokeWebApp/backend/internal/domain/entity"
@@ -157,9 +156,9 @@ func (h *ProcessGitHubEventHandler) Handle(ctx context.Context, cmd *ProcessGitH
 			caughtRarity = pokemonInfo.Rarity
 		}
 
-		// On deploy, guaranteed legendary Pokemon + 1-hour team rarity boost!
+		// On deploy, catch a Pokemon (200 XP bonus already applied above)
 		if cmd.EventType == entity.EventDeploy {
-			pokemonInfo, err := h.gachaSvc.DrawLegendary(ctx)
+			pokemonInfo, err := h.gachaSvc.DrawWithBoost(ctx, streakMultiplier)
 			if err != nil {
 				return err
 			}
@@ -174,23 +173,6 @@ func (h *ProcessGitHubEventHandler) Handle(ctx context.Context, cmd *ProcessGitH
 			result.PokemonRarity = string(pokemonInfo.Rarity)
 			result.DeployBoost = true
 			caughtRarity = pokemonInfo.Rarity
-
-			// Create 1-hour limited event for the team
-			if h.limitedEventRepo != nil {
-				now := time.Now()
-				deployEvent := entity.NewLimitedEvent(
-					user.TenantID,
-					"デプロイ記念ボーナス 🚀",
-					fmt.Sprintf("%sがデプロイしました！1時間レアリティUP！", user.Name),
-					"🚀",
-					2.0,
-					now,
-					now.Add(1*time.Hour),
-				)
-				if err := h.limitedEventRepo.Save(ctx, deployEvent); err != nil {
-					return err
-				}
-			}
 		}
 
 		// Check achievements
