@@ -25,6 +25,7 @@ func Setup(
 	weeklyEventHandler *handler.WeeklyEventHandler,
 	limitedEventHandler *handler.LimitedEventHandler,
 	tradeHandler *handler.TradeHandler,
+	deployerHandler *handler.DeployerHandler,
 ) {
 	// CORS
 	r.Use(func(c *gin.Context) {
@@ -153,6 +154,14 @@ func Setup(
 			trades.POST("", tradeHandler.CreateTrade)
 			trades.POST("/:id/accept", tradeHandler.AcceptTrade)
 			trades.POST("/:id/cancel", tradeHandler.CancelTrade)
+		}
+
+		// Admin: Deployer Management
+		deployers := protected.Group("/admin/deployers")
+		{
+			deployers.GET("", deployerHandler.GetDeployers)
+			deployers.POST("", deployerHandler.AddDeployer)
+			deployers.DELETE("/:id", deployerHandler.RemoveDeployer)
 		}
 	}
 }

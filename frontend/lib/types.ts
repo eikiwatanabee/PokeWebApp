@@ -68,7 +68,7 @@ export interface AuthTokens {
 
 export interface GitHubActivity {
   id: string
-  event_type: 'commit' | 'pr_merge' | 'pr_open' | 'issue_close' | 'review'
+  event_type: 'commit' | 'pr_merge' | 'pr_open' | 'issue_close' | 'review' | 'deploy'
   repo_name: string
   title: string
   url: string
@@ -148,7 +148,7 @@ export interface FeedItem {
   user_name: string
   user_avatar_url: string
   github_username: string
-  event_type: 'commit' | 'pr_merge' | 'pr_open' | 'issue_close' | 'review'
+  event_type: 'commit' | 'pr_merge' | 'pr_open' | 'issue_close' | 'review' | 'deploy'
   repo_name: string
   title: string
   url: string

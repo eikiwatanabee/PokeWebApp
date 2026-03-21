@@ -75,7 +75,7 @@ func TestWebhookHandler_NoSecret_SkipsVerification(t *testing.T) {
 }
 
 func TestWebhookHandler_UnknownEventType(t *testing.T) {
-	w, c, _ := setupWebhookTest("deployment", map[string]string{})
+	w, c, _ := setupWebhookTest("workflow_run", map[string]string{})
 
 	h := NewWebhookHandler(auth.NewWebhookVerifier(testWebhookSecret), nil)
 	h.HandleGitHubWebhook(c)
@@ -87,6 +87,30 @@ func TestWebhookHandler_UnknownEventType(t *testing.T) {
 	var resp map[string]interface{}
 	json.Unmarshal(w.Body.Bytes(), &resp)
 	if resp["message"] != "event type not tracked" {
+		t.Errorf("unexpected message: %v", resp["message"])
+	}
+}
+
+func TestWebhookHandler_DeploymentNoUsername(t *testing.T) {
+	w, c, _ := setupWebhookTest("deployment", map[string]interface{}{
+		"deployment": map[string]interface{}{
+			"creator":     map[string]string{},
+			"environment": "production",
+		},
+		"sender":     map[string]string{},
+		"repository": map[string]string{"full_name": "test/repo"},
+	})
+
+	h := NewWebhookHandler(auth.NewWebhookVerifier(testWebhookSecret), nil)
+	h.HandleGitHubWebhook(c)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected 200, got %d", w.Code)
+	}
+
+	var resp map[string]interface{}
+	json.Unmarshal(w.Body.Bytes(), &resp)
+	if resp["message"] != "no deployer username found" {
 		t.Errorf("unexpected message: %v", resp["message"])
 	}
 }

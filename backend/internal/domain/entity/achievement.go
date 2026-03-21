@@ -71,6 +71,12 @@ const (
 	AchievementIssue10      AchievementType = "issue_10"
 	AchievementIssue50      AchievementType = "issue_50"
 
+	// --- デプロイ系 ---
+	AchievementFirstDeploy  AchievementType = "first_deploy"
+	AchievementDeploy10     AchievementType = "deploy_10"
+	AchievementDeploy50     AchievementType = "deploy_50"
+	AchievementDeploy100    AchievementType = "deploy_100"
+
 	// --- 特殊系 ---
 	AchievementAllRounder   AchievementType = "all_rounder"
 )
@@ -145,6 +151,12 @@ var AchievementDefinitions = []AchievementDefinition{
 	{AchievementFirstIssue, "バグハンター", "最初のIssue完了", "🐛", "issue"},
 	{AchievementIssue10, "イシュークラッシャー", "10個のIssue完了", "🔨", "issue"},
 	{AchievementIssue50, "イシューマスター", "50個のIssue完了", "⚔️", "issue"},
+
+	// デプロイ
+	{AchievementFirstDeploy, "はじめてのデプロイ", "最初のデプロイ成功", "🚀", "deploy"},
+	{AchievementDeploy10, "デプロイマスター", "10回デプロイ", "🛸", "deploy"},
+	{AchievementDeploy50, "デプロイの鬼", "50回デプロイ", "🌍", "deploy"},
+	{AchievementDeploy100, "インフラの神", "100回デプロイ", "🏗️", "deploy"},
 
 	// 特殊
 	{AchievementAllRounder, "オールラウンダー", "コミット・PR・レビュー・Issue全種達成", "🎯", "special"},

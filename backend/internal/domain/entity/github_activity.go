@@ -14,6 +14,7 @@ const (
 	EventPROpen      GitHubEventType = "pr_open"
 	EventIssueClose  GitHubEventType = "issue_close"
 	EventReview      GitHubEventType = "review"
+	EventDeploy      GitHubEventType = "deploy"
 )
 
 type GitHubActivity struct {
@@ -33,6 +34,7 @@ var xpTable = map[GitHubEventType]int{
 	EventPROpen:     20,
 	EventIssueClose: 15,
 	EventReview:     25,
+	EventDeploy:     200,
 }
 
 func NewGitHubActivity(userID uuid.UUID, eventType GitHubEventType, repoName, title, url string) *GitHubActivity {

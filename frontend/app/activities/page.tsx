@@ -14,6 +14,7 @@ const eventIcons: Record<string, string> = {
   pr_open: '📝',
   issue_close: '✅',
   review: '👀',
+  deploy: '🚀',
 }
 
 const eventLabels: Record<string, string> = {
@@ -22,6 +23,7 @@ const eventLabels: Record<string, string> = {
   pr_open: 'PR作成',
   issue_close: 'Issue完了',
   review: 'レビュー',
+  deploy: 'デプロイ',
 }
 
 const eventColors: Record<string, string> = {
@@ -30,6 +32,7 @@ const eventColors: Record<string, string> = {
   pr_open: 'bg-blue-100 text-blue-700',
   issue_close: 'bg-green-100 text-green-700',
   review: 'bg-yellow-100 text-yellow-700',
+  deploy: 'bg-red-100 text-red-700',
 }
 
 type Tab = 'mine' | 'team'

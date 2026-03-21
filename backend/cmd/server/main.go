@@ -49,6 +49,7 @@ func main() {
 		&persistence.WeeklyEventModel{},
 		&persistence.LimitedEventModel{},
 		&persistence.TradeModel{},
+		&persistence.DeployerModel{},
 	); err != nil {
 		log.Fatalf("failed to migrate: %v", err)
 	}
@@ -69,6 +70,7 @@ func main() {
 	weeklyEventRepo := persistence.NewGormWeeklyEventRepository(db)
 	limitedEventRepo := persistence.NewGormLimitedEventRepository(db)
 	tradeRepo := persistence.NewGormTradeRepository(db)
+	deployerRepo := persistence.NewGormDeployerRepository(db)
 	pokeAPIClient := pokeapi.NewClient()
 
 	// --- Auth ---
@@ -101,7 +103,7 @@ func main() {
 	deleteMemoHandler := command.NewDeleteMemoHandler(uow, memoRepo)
 	createTagHandler := command.NewCreateTagHandler(uow, tagRepo)
 	deleteTagHandler := command.NewDeleteTagHandler(uow, tagRepo)
-	processGitHubEventHandler := command.NewProcessGitHubEventHandler(uow, userRepo, activityRepo, pokemonRepo, gachaSvc, achievementSvc, missionSvc, limitedEventRepo)
+	processGitHubEventHandler := command.NewProcessGitHubEventHandler(uow, userRepo, activityRepo, pokemonRepo, gachaSvc, achievementSvc, missionSvc, limitedEventRepo, deployerRepo)
 
 	// --- Query Handlers ---
 	getBooksHandler := query.NewGetBooksHandler(bookRepo)
@@ -149,10 +151,11 @@ func main() {
 	weeklyEventHandler := handler.NewWeeklyEventHandler(getWeeklyEventHandler)
 	limitedEventHandler := handler.NewLimitedEventHandler(getLimitedEventsHandler, createLimitedEventHandler)
 	tradeHandler := handler.NewTradeHandler(createTradeHandler, acceptTradeHandler, cancelTradeHandler, getTradesHandler)
+	deployerHandler := handler.NewDeployerHandler(deployerRepo)
 
 	// --- Router ---
 	r := gin.Default()
-	router.Setup(r, jwtManager, authHandler, bookHandler, memoHandler, tagHandler, pokedexHandler, starterHandler, teamHandler, webhookHandler, activityHandler, dailyMissionHandler, rankingHandler, feedHandler, weeklyEventHandler, limitedEventHandler, tradeHandler)
+	router.Setup(r, jwtManager, authHandler, bookHandler, memoHandler, tagHandler, pokedexHandler, starterHandler, teamHandler, webhookHandler, activityHandler, dailyMissionHandler, rankingHandler, feedHandler, weeklyEventHandler, limitedEventHandler, tradeHandler, deployerHandler)
 
 	// --- Start ---
 	port := getEnv("PORT", "8080")

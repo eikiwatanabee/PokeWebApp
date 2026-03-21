@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Navbar } from '@/components/Navbar'
 import { api } from '@/lib/api'
 import { getUser, isLoggedIn } from '@/lib/auth'
@@ -94,10 +95,28 @@ export default function SettingsPage() {
             </div>
             <div>
               <span className="text-gray-500 block mb-1">Events:</span>
-              <span className="text-gray-700">Push, Pull requests, Pull request reviews, Issues</span>
+              <span className="text-gray-700">Push, Pull requests, Pull request reviews, Issues, Deployments</span>
             </div>
           </div>
         </div>
+
+        {/* Admin: Deployer Management */}
+        {user?.role === 'admin' && (
+          <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+            <h2 className="text-lg font-bold mb-2">管理者メニュー</h2>
+            <Link
+              href="/admin/deployers"
+              className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <span className="text-2xl">🚀</span>
+              <div>
+                <p className="font-medium text-gray-900">デプロイヤー管理</p>
+                <p className="text-xs text-gray-500">デプロイ報酬を受け取れるユーザーを管理</p>
+              </div>
+              <span className="ml-auto text-gray-400">→</span>
+            </Link>
+          </div>
+        )}
 
         {/* Tag Management */}
         <div className="bg-white rounded-xl shadow-sm p-6">

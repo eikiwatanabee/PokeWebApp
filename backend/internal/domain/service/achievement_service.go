@@ -189,6 +189,17 @@ func (s *AchievementService) buildChecks(user *entity.User, caughtRarity valueob
 		{entity.AchievementIssue50, 50},
 	}, c.issues)...)
 
+	// デプロイ系
+	all = append(all, thresholdChecks([]struct {
+		t         entity.AchievementType
+		threshold int64
+	}{
+		{entity.AchievementFirstDeploy, 1},
+		{entity.AchievementDeploy10, 10},
+		{entity.AchievementDeploy50, 50},
+		{entity.AchievementDeploy100, 100},
+	}, c.deploys)...)
+
 	// 特殊系
 	all = append(all, s.specialChecks(c)...)
 
@@ -275,6 +286,7 @@ type lazyCounters struct {
 	mergeCount   *int64
 	reviewCount  *int64
 	issueCount   *int64
+	deployCount  *int64
 	pokemonCount *int
 }
 
@@ -329,6 +341,17 @@ func (lc *lazyCounters) issues() (int64, error) {
 		lc.issueCount = &c
 	}
 	return *lc.issueCount, nil
+}
+
+func (lc *lazyCounters) deploys() (int64, error) {
+	if lc.deployCount == nil {
+		c, err := lc.activityRepo.CountByUserIDAndType(lc.ctx, lc.userID, entity.EventDeploy)
+		if err != nil {
+			return 0, err
+		}
+		lc.deployCount = &c
+	}
+	return *lc.deployCount, nil
 }
 
 func (lc *lazyCounters) pokemon() (int, error) {

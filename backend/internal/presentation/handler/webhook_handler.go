@@ -53,6 +53,8 @@ func (h *WebhookHandler) HandleGitHubWebhook(c *gin.Context) {
 		h.handlePullRequestReview(ctx, body, c)
 	case "issues":
 		h.handleIssues(ctx, body, c)
+	case "deployment", "deployment_status":
+		h.handleDeployment(ctx, body, c)
 	default:
 		c.JSON(http.StatusOK, gin.H{"message": "event type not tracked", "event": eventType})
 	}
@@ -225,6 +227,69 @@ type issuePayload struct {
 	Repository struct {
 		FullName string `json:"full_name"`
 	} `json:"repository"`
+}
+
+type deploymentPayload struct {
+	Action     string `json:"action"`
+	Deployment struct {
+		Creator struct {
+			Login string `json:"login"`
+		} `json:"creator"`
+		Description string `json:"description"`
+		Environment string `json:"environment"`
+	} `json:"deployment"`
+	DeploymentStatus *struct {
+		State string `json:"state"`
+	} `json:"deployment_status"`
+	Sender struct {
+		Login string `json:"login"`
+	} `json:"sender"`
+	Repository struct {
+		FullName string `json:"full_name"`
+	} `json:"repository"`
+}
+
+func (h *WebhookHandler) handleDeployment(ctx interface{ Done() <-chan struct{} }, body []byte, c *gin.Context) {
+	var payload deploymentPayload
+	if err := json.Unmarshal(body, &payload); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid deployment payload"})
+		return
+	}
+
+	// For deployment_status events, only track successful deployments
+	if payload.DeploymentStatus != nil && payload.DeploymentStatus.State != "success" {
+		c.JSON(http.StatusOK, gin.H{"message": "deployment status not success, skipped"})
+		return
+	}
+
+	// For deployment events (not status), track the creation
+	username := payload.Deployment.Creator.Login
+	if username == "" {
+		username = payload.Sender.Login
+	}
+	if username == "" {
+		c.JSON(http.StatusOK, gin.H{"message": "no deployer username found"})
+		return
+	}
+
+	title := "Deploy: " + payload.Deployment.Environment
+	if payload.Deployment.Description != "" {
+		title = payload.Deployment.Description
+	}
+
+	result, err := h.processGitHubEvent.Handle(c.Request.Context(), &command.ProcessGitHubEventCommand{
+		GitHubUsername: username,
+		EventType:     entity.EventDeploy,
+		RepoName:      payload.Repository.FullName,
+		Title:         title,
+		URL:           "",
+	})
+	if err != nil {
+		log.Printf("error processing deployment: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "deployment processed", "result": result})
 }
 
 func (h *WebhookHandler) handleIssues(ctx interface{ Done() <-chan struct{} }, body []byte, c *gin.Context) {

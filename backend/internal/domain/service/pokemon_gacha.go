@@ -43,6 +43,16 @@ func (s *PokemonGachaService) DrawWithBoost(ctx context.Context, streakMultiplie
 	return info, nil
 }
 
+// DrawLegendary fetches a random Pokemon and forces its rarity to legendary.
+func (s *PokemonGachaService) DrawLegendary(ctx context.Context) (*valueobject.PokemonInfo, error) {
+	info, err := s.fetcher.FetchRandom(ctx)
+	if err != nil {
+		return nil, err
+	}
+	info.Rarity = valueobject.RarityLegendary
+	return info, nil
+}
+
 // FetchByID fetches a specific Pokemon by its ID.
 func (s *PokemonGachaService) FetchByID(ctx context.Context, id int) (*valueobject.PokemonInfo, error) {
 	return s.fetcher.FetchByID(ctx, id)

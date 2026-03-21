@@ -185,3 +185,12 @@ type TradeModel struct {
 }
 
 func (TradeModel) TableName() string { return "trades" }
+
+type DeployerModel struct {
+	ID        uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
+	TenantID  uuid.UUID `gorm:"type:uuid;not null;index:idx_deployer_tenant_user,unique"`
+	UserID    uuid.UUID `gorm:"type:uuid;not null;index:idx_deployer_tenant_user,unique"`
+	CreatedAt time.Time `gorm:"autoCreateTime"`
+}
+
+func (DeployerModel) TableName() string { return "deployers" }

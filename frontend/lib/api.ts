@@ -240,6 +240,22 @@ class ApiClient {
     await this.request(`/api/trades/${tradeId}/cancel`, { method: 'POST' })
   }
 
+  // Admin: Deployers
+  async getDeployers(): Promise<{ deployer_ids: string[] }> {
+    return this.request('/api/admin/deployers')
+  }
+
+  async addDeployer(userId: string): Promise<void> {
+    await this.request('/api/admin/deployers', {
+      method: 'POST',
+      body: JSON.stringify({ user_id: userId }),
+    })
+  }
+
+  async removeDeployer(userId: string): Promise<void> {
+    await this.request(`/api/admin/deployers/${userId}`, { method: 'DELETE' })
+  }
+
   // Trainer Card
   async getTrainerCard(userId?: string): Promise<TrainerCard> {
     const id = userId || 'me'

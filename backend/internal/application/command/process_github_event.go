@@ -2,7 +2,9 @@ package command
 
 import (
 	"context"
+	"fmt"
 	"math"
+	"time"
 
 	"github.com/eikiwatanabee/PokeWebApp/backend/internal/application/uow"
 	"github.com/eikiwatanabee/PokeWebApp/backend/internal/domain/entity"
@@ -36,6 +38,7 @@ type ProcessGitHubEventResult struct {
 	SpriteURL       string             `json:"sprite_url,omitempty"`
 	PokemonRarity   string             `json:"pokemon_rarity,omitempty"`
 	NewAchievements []NewAchievementDTO `json:"new_achievements,omitempty"`
+	DeployBoost     bool               `json:"deploy_boost,omitempty"`
 }
 
 type ProcessGitHubEventHandler struct {
@@ -44,6 +47,7 @@ type ProcessGitHubEventHandler struct {
 	activityRepo     repository.GitHubActivityRepository
 	pokemonRepo      repository.PokemonRepository
 	limitedEventRepo repository.LimitedEventRepository
+	deployerRepo     repository.DeployerRepository
 	gachaSvc         *service.PokemonGachaService
 	achievementSvc   *service.AchievementService
 	missionSvc       *service.DailyMissionService
@@ -58,6 +62,7 @@ func NewProcessGitHubEventHandler(
 	achievementSvc *service.AchievementService,
 	missionSvc *service.DailyMissionService,
 	limitedEventRepo repository.LimitedEventRepository,
+	deployerRepo repository.DeployerRepository,
 ) *ProcessGitHubEventHandler {
 	return &ProcessGitHubEventHandler{
 		uow:              uow,
@@ -65,6 +70,7 @@ func NewProcessGitHubEventHandler(
 		activityRepo:     activityRepo,
 		pokemonRepo:      pokemonRepo,
 		limitedEventRepo: limitedEventRepo,
+		deployerRepo:     deployerRepo,
 		gachaSvc:         gachaSvc,
 		achievementSvc:   achievementSvc,
 		missionSvc:       missionSvc,
@@ -78,6 +84,17 @@ func (h *ProcessGitHubEventHandler) Handle(ctx context.Context, cmd *ProcessGitH
 	}
 	if user == nil {
 		return nil, nil
+	}
+
+	// Deploy events require deployer permission
+	if cmd.EventType == entity.EventDeploy && h.deployerRepo != nil {
+		isDeployer, err := h.deployerRepo.IsDeployer(ctx, user.TenantID, user.ID)
+		if err != nil {
+			return nil, err
+		}
+		if !isDeployer {
+			return nil, fmt.Errorf("user is not authorized as deployer")
+		}
 	}
 
 	var result *ProcessGitHubEventResult
@@ -138,6 +155,42 @@ func (h *ProcessGitHubEventHandler) Handle(ctx context.Context, cmd *ProcessGitH
 			result.SpriteURL = pokemonInfo.SpriteURL
 			result.PokemonRarity = string(pokemonInfo.Rarity)
 			caughtRarity = pokemonInfo.Rarity
+		}
+
+		// On deploy, guaranteed legendary Pokemon + 1-hour team rarity boost!
+		if cmd.EventType == entity.EventDeploy {
+			pokemonInfo, err := h.gachaSvc.DrawLegendary(ctx)
+			if err != nil {
+				return err
+			}
+
+			userPokemon := entity.NewUserPokemonFromActivity(user.ID, activity.ID, *pokemonInfo)
+			if err := h.pokemonRepo.Save(ctx, userPokemon); err != nil {
+				return err
+			}
+
+			result.PokemonName = pokemonInfo.Name
+			result.SpriteURL = pokemonInfo.SpriteURL
+			result.PokemonRarity = string(pokemonInfo.Rarity)
+			result.DeployBoost = true
+			caughtRarity = pokemonInfo.Rarity
+
+			// Create 1-hour limited event for the team
+			if h.limitedEventRepo != nil {
+				now := time.Now()
+				deployEvent := entity.NewLimitedEvent(
+					user.TenantID,
+					"デプロイ記念ボーナス 🚀",
+					fmt.Sprintf("%sがデプロイしました！1時間レアリティUP！", user.Name),
+					"🚀",
+					2.0,
+					now,
+					now.Add(1*time.Hour),
+				)
+				if err := h.limitedEventRepo.Save(ctx, deployEvent); err != nil {
+					return err
+				}
+			}
 		}
 
 		// Check achievements
