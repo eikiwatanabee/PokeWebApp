@@ -24,5 +24,7 @@ services:
         sync: false
       - key: GITHUB_REDIRECT_URL
         sync: false
+      - key: CORS_ORIGINS
+        sync: false
       - key: GITHUB_WEBHOOK_SECRET
         sync: false

@@ -36,6 +36,7 @@ services:
       GITHUB_CLIENT_SECRET: "${GITHUB_CLIENT_SECRET:-}"
       GITHUB_REDIRECT_URL: "http://localhost:8080/api/auth/github/callback"
       GITHUB_WEBHOOK_SECRET: "${GITHUB_WEBHOOK_SECRET:-}"
+      CORS_ORIGINS: "http://localhost:3000"
     depends_on:
       db:
         condition: service_healthy

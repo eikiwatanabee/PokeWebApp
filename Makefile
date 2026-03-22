@@ -6,7 +6,7 @@ COMPOSE ?= docker compose
 BACKEND_DIR := backend
 FRONTEND_DIR := frontend
 
-.PHONY: help install backend-deps frontend-deps up up-d down logs ps restart dev dev-db dev-api dev-frontend
+.PHONY: help install backend-deps frontend-deps up up-d down logs ps restart dev dev-db dev-api dev-frontend test test-backend test-frontend lint
 
 help:
 	@printf "%-18s %s\n" "make up" "Start the full stack with Docker Compose"
@@ -18,6 +18,10 @@ help:
 	@printf "%-18s %s\n" "make dev" "Start only the database for local development"
 	@printf "%-18s %s\n" "make dev-api" "Run the Go API locally"
 	@printf "%-18s %s\n" "make dev-frontend" "Run the Next.js frontend locally"
+	@printf "%-18s %s\n" "make test" "Run all tests"
+	@printf "%-18s %s\n" "make test-backend" "Run Go tests with race detection"
+	@printf "%-18s %s\n" "make test-frontend" "Run frontend tests"
+	@printf "%-18s %s\n" "make lint" "Run linters (go vet + next lint)"
 
 install: backend-deps frontend-deps
 
@@ -59,3 +63,15 @@ dev-api:
 
 dev-frontend:
 	cd $(FRONTEND_DIR) && npm run dev
+
+test: test-backend test-frontend
+
+test-backend:
+	cd $(BACKEND_DIR) && go test ./... -v -race
+
+test-frontend:
+	cd $(FRONTEND_DIR) && npm test
+
+lint:
+	cd $(BACKEND_DIR) && go vet ./...
+	cd $(FRONTEND_DIR) && npm run lint

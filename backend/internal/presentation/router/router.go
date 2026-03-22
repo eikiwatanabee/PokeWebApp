@@ -1,6 +1,9 @@
 package router
 
 import (
+	"os"
+	"strings"
+
 	"github.com/eikiwatanabee/PokeWebApp/backend/internal/infrastructure/auth"
 	"github.com/eikiwatanabee/PokeWebApp/backend/internal/presentation/handler"
 	"github.com/eikiwatanabee/PokeWebApp/backend/internal/presentation/middleware"
@@ -29,9 +32,14 @@ func Setup(
 ) {
 	// CORS
 	r.Use(func(c *gin.Context) {
-		c.Header("Access-Control-Allow-Origin", "*")
+		origin := c.GetHeader("Origin")
+		allowed := getAllowedOrigins()
+		if isOriginAllowed(origin, allowed) {
+			c.Header("Access-Control-Allow-Origin", origin)
+		}
 		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		c.Header("Access-Control-Allow-Credentials", "true")
 		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(204)
 			return
@@ -145,7 +153,10 @@ func Setup(
 
 		// Limited Events
 		protected.GET("/events/limited", limitedEventHandler.GetActiveEvents)
-		protected.POST("/events/limited", limitedEventHandler.CreateEvent) // TODO: restrict to admin
+		// Admin-only: create limited events
+		adminEvents := protected.Group("/events/limited")
+		adminEvents.Use(middleware.AdminRequired())
+		adminEvents.POST("", limitedEventHandler.CreateEvent)
 
 		// Trades
 		trades := protected.Group("/trades")
@@ -164,4 +175,24 @@ func Setup(
 			deployers.DELETE("/:id", deployerHandler.RemoveDeployer)
 		}
 	}
+}
+
+func getAllowedOrigins() []string {
+	origins := os.Getenv("CORS_ORIGINS")
+	if origins == "" {
+		return []string{"http://localhost:3000"}
+	}
+	return strings.Split(origins, ",")
+}
+
+func isOriginAllowed(origin string, allowed []string) bool {
+	if origin == "" {
+		return false
+	}
+	for _, a := range allowed {
+		if strings.TrimSpace(a) == origin {
+			return true
+		}
+	}
+	return false
 }
