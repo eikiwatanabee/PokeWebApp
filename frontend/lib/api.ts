@@ -1,4 +1,4 @@
-import type { AuthTokens, Book, BookListItem, CaughtPokemon, Memo, Pokemon, Tag } from './types'
+import type { AuthTokens, Book, BookListItem, CaughtPokemon, DailyMissionsResult, GitHubActivity, LimitedEventsResult, LoginBonusResult, Memo, Pokemon, Tag, TeamFeedResult, TradesResult, TrainerCard, UserRankingResult, UserStats, WeeklyEvent } from './types'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
 
@@ -71,8 +71,27 @@ class ApiClient {
     return this.request(`/api/auth/google/callback?code=${code}`)
   }
 
+  async getGitHubAuthURL(): Promise<{ url: string }> {
+    return this.request('/api/auth/github')
+  }
+
+  async githubCallback(code: string): Promise<AuthTokens> {
+    return this.request(`/api/auth/github/callback?code=${code}`)
+  }
+
   async devLogin(): Promise<AuthTokens> {
     return this.request('/api/auth/dev-login', { method: 'POST' })
+  }
+
+  // GitHub Activities
+  async getActivities(limit?: number): Promise<{ activities: GitHubActivity[]; total_count: number }> {
+    const qs = limit ? `?limit=${limit}` : ''
+    return this.request(`/api/activities${qs}`)
+  }
+
+  // User Stats
+  async getStats(): Promise<UserStats> {
+    return this.request('/api/stats')
   }
 
   // Books
@@ -162,8 +181,85 @@ class ApiClient {
     await this.request(`/api/teams/${teamId}/join`, { method: 'POST' })
   }
 
-  async getTeamRanking(): Promise<{ teams: { team_id: string; team_name: string; member_count: number; pokemon_count: number; book_count: number }[] }> {
+  async getTeamRanking(): Promise<{ teams: { team_id: string; team_name: string; member_count: number; pokemon_count: number; total_xp: number }[] }> {
     return this.request('/api/teams/ranking')
+  }
+
+  // Daily Missions
+  async getDailyMissions(): Promise<DailyMissionsResult> {
+    return this.request('/api/daily/missions')
+  }
+
+  // Login Bonus
+  async claimLoginBonus(): Promise<LoginBonusResult> {
+    return this.request('/api/daily/login-bonus', { method: 'POST' })
+  }
+
+  // User Ranking
+  async getUserRanking(sortBy?: string): Promise<UserRankingResult> {
+    const qs = sortBy ? `?sort_by=${sortBy}` : ''
+    return this.request(`/api/ranking/users${qs}`)
+  }
+
+  // Team Feed
+  async getTeamFeed(limit?: number): Promise<TeamFeedResult> {
+    const qs = limit ? `?limit=${limit}` : ''
+    return this.request(`/api/feed${qs}`)
+  }
+
+  // Limited Events
+  async getLimitedEvents(): Promise<LimitedEventsResult> {
+    return this.request('/api/events/limited')
+  }
+
+  // Weekly Event
+  async getWeeklyEvent(): Promise<WeeklyEvent> {
+    return this.request('/api/events/weekly')
+  }
+
+  // Trades
+  async getTrades(): Promise<TradesResult> {
+    return this.request('/api/trades')
+  }
+
+  async createTrade(offeredPokemonId: string, requestedPokemonName?: string): Promise<{ trade_id: string }> {
+    return this.request('/api/trades', {
+      method: 'POST',
+      body: JSON.stringify({ offered_pokemon_id: offeredPokemonId, requested_pokemon_name: requestedPokemonName || '' }),
+    })
+  }
+
+  async acceptTrade(tradeId: string, offeredPokemonId: string): Promise<void> {
+    await this.request(`/api/trades/${tradeId}/accept`, {
+      method: 'POST',
+      body: JSON.stringify({ offered_pokemon_id: offeredPokemonId }),
+    })
+  }
+
+  async cancelTrade(tradeId: string): Promise<void> {
+    await this.request(`/api/trades/${tradeId}/cancel`, { method: 'POST' })
+  }
+
+  // Admin: Deployers
+  async getDeployers(): Promise<{ deployer_ids: string[] }> {
+    return this.request('/api/admin/deployers')
+  }
+
+  async addDeployer(userId: string): Promise<void> {
+    await this.request('/api/admin/deployers', {
+      method: 'POST',
+      body: JSON.stringify({ user_id: userId }),
+    })
+  }
+
+  async removeDeployer(userId: string): Promise<void> {
+    await this.request(`/api/admin/deployers/${userId}`, { method: 'DELETE' })
+  }
+
+  // Trainer Card
+  async getTrainerCard(userId?: string): Promise<TrainerCard> {
+    const id = userId || 'me'
+    return this.request(`/api/trainers/${id}`)
   }
 }
 

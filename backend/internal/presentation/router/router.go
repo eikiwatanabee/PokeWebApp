@@ -1,6 +1,9 @@
 package router
 
 import (
+	"os"
+	"strings"
+
 	"github.com/eikiwatanabee/PokeWebApp/backend/internal/infrastructure/auth"
 	"github.com/eikiwatanabee/PokeWebApp/backend/internal/presentation/handler"
 	"github.com/eikiwatanabee/PokeWebApp/backend/internal/presentation/middleware"
@@ -17,12 +20,26 @@ func Setup(
 	pokedexHandler *handler.PokedexHandler,
 	starterHandler *handler.StarterHandler,
 	teamHandler *handler.TeamHandler,
+	webhookHandler *handler.WebhookHandler,
+	activityHandler *handler.ActivityHandler,
+	dailyMissionHandler *handler.DailyMissionHandler,
+	rankingHandler *handler.RankingHandler,
+	feedHandler *handler.FeedHandler,
+	weeklyEventHandler *handler.WeeklyEventHandler,
+	limitedEventHandler *handler.LimitedEventHandler,
+	tradeHandler *handler.TradeHandler,
+	deployerHandler *handler.DeployerHandler,
 ) {
 	// CORS
 	r.Use(func(c *gin.Context) {
-		c.Header("Access-Control-Allow-Origin", "*")
+		origin := c.GetHeader("Origin")
+		allowed := getAllowedOrigins()
+		if isOriginAllowed(origin, allowed) {
+			c.Header("Access-Control-Allow-Origin", origin)
+		}
 		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		c.Header("Access-Control-Allow-Credentials", "true")
 		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(204)
 			return
@@ -42,15 +59,29 @@ func Setup(
 	{
 		authGroup.GET("/google", authHandler.GoogleLogin)
 		authGroup.GET("/google/callback", authHandler.GoogleCallback)
+		authGroup.GET("/github", authHandler.GitHubLogin)
+		authGroup.GET("/github/callback", authHandler.GitHubCallback)
 		authGroup.POST("/refresh", authHandler.RefreshToken)
 		authGroup.POST("/dev-login", authHandler.DevLogin)
 	}
+
+	// GitHub Webhook (public, verified by signature)
+	api.POST("/webhook/github", webhookHandler.HandleGitHubWebhook)
 
 	// Protected routes
 	protected := api.Group("")
 	protected.Use(middleware.AuthRequired(jwtManager))
 	{
-		// Books
+		// GitHub Activities
+		activities := protected.Group("/activities")
+		{
+			activities.GET("", activityHandler.GetActivities)
+		}
+
+		// User Stats
+		protected.GET("/stats", activityHandler.GetStats)
+
+		// Books (kept for backwards compatibility)
 		books := protected.Group("/books")
 		{
 			books.POST("", bookHandler.Register)
@@ -101,5 +132,67 @@ func Setup(
 			teams.POST("/:id/join", teamHandler.JoinTeam)
 			teams.GET("/ranking", teamHandler.GetRanking)
 		}
+
+		// Daily Missions & Login Bonus
+		daily := protected.Group("/daily")
+		{
+			daily.GET("/missions", dailyMissionHandler.GetMissions)
+			daily.POST("/login-bonus", dailyMissionHandler.ClaimLoginBonus)
+		}
+
+		// User Ranking & Trainer Cards
+		protected.GET("/ranking/users", rankingHandler.GetUserRanking)
+		protected.GET("/trainers/:id", rankingHandler.GetTrainerCard)
+		protected.GET("/trainers/me", rankingHandler.GetTrainerCard)
+
+		// Team Feed
+		protected.GET("/feed", feedHandler.GetTeamFeed)
+
+		// Weekly Event
+		protected.GET("/events/weekly", weeklyEventHandler.GetCurrentEvent)
+
+		// Limited Events
+		protected.GET("/events/limited", limitedEventHandler.GetActiveEvents)
+		// Admin-only: create limited events
+		adminEvents := protected.Group("/events/limited")
+		adminEvents.Use(middleware.AdminRequired())
+		adminEvents.POST("", limitedEventHandler.CreateEvent)
+
+		// Trades
+		trades := protected.Group("/trades")
+		{
+			trades.GET("", tradeHandler.GetTrades)
+			trades.POST("", tradeHandler.CreateTrade)
+			trades.POST("/:id/accept", tradeHandler.AcceptTrade)
+			trades.POST("/:id/cancel", tradeHandler.CancelTrade)
+		}
+
+		// Admin: Deployer Management
+		deployers := protected.Group("/admin/deployers")
+		{
+			deployers.GET("", deployerHandler.GetDeployers)
+			deployers.POST("", deployerHandler.AddDeployer)
+			deployers.DELETE("/:id", deployerHandler.RemoveDeployer)
+		}
 	}
+}
+
+func getAllowedOrigins() []string {
+	origins := os.Getenv("CORS_ORIGINS")
+	if origins == "" {
+		return []string{"http://localhost:3000"}
+	}
+	return strings.Split(origins, ",")
+}
+
+func isOriginAllowed(origin string, allowed []string) bool {
+	if origin == "" {
+		return false
+	}
+	for _, a := range allowed {
+		if strings.TrimSpace(a) == origin {
+			return true
+		}
+	}
+	return false
 }

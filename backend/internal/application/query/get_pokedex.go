@@ -17,7 +17,8 @@ type PokemonDTO struct {
 	PokemonName string   `json:"pokemon_name"`
 	SpriteURL   string   `json:"sprite_url"`
 	Types       []string `json:"types"`
-	BookID      string   `json:"book_id"`
+	Rarity      string   `json:"rarity"`
+	ActivityID  string   `json:"activity_id"`
 	CaughtAt    string   `json:"caught_at"`
 }
 
@@ -47,13 +48,18 @@ func (h *GetPokedexHandler) Handle(ctx context.Context, q *GetPokedexQuery) (*Ge
 
 	dtos := make([]PokemonDTO, len(pokemons))
 	for i, p := range pokemons {
+		rarity := string(p.Pokemon.Rarity)
+		if rarity == "" {
+			rarity = "common"
+		}
 		dtos[i] = PokemonDTO{
 			ID:          p.ID.String(),
 			PokemonID:   p.Pokemon.PokemonID,
 			PokemonName: p.Pokemon.Name,
 			SpriteURL:   p.Pokemon.SpriteURL,
 			Types:       p.Pokemon.Types,
-			BookID:      p.BookID.String(),
+			Rarity:      rarity,
+			ActivityID:  p.ActivityID.String(),
 			CaughtAt:    p.CaughtAt.Format("2006-01-02T15:04:05Z"),
 		}
 	}
